@@ -1,0 +1,12 @@
+{
+    "servers": {
+        "encore-mcp": {
+            "args": [
+                "mcp",
+                "run",
+                "--app=task-management-3n3i"
+            ],
+            "command": "encore"
+        }
+    }
+}
