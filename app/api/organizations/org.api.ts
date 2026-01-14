@@ -1,31 +1,19 @@
-// api
 import { api } from "encore.dev/api"
+import { getAuthData } from "~encore/auth"
 import { OrganizationService } from "./org.service"
-import { CreateOrganizationSchema, UpdateOrganizationSchema,  } from "../../../lib/validation/organizations"
+import { CreateOrganizationSchema } from "../../../lib/validation/organizations"
+
+interface CreateOrganizationInput {
+  name: string;
+}
 
 export const createOrganization = api(
-     { method: "POST", path: "/v1/organizations/create" },
-     async (body: { name: string }) => {
-     const input = CreateOrganizationSchema.parse(body)
-     return OrganizationService.create({ name: input.name }, {
-          organizationId: "", 
-          role: "admin" 
-     })
-     }
-)
-
-export const updateOrganization = api(
-     {method: "PUT", path: "/v1/organizations/:id"},
-     async( params: {id: string} & {name: string} ) =>{
-          // const input = UpdateOrganizationSchema.parse(params)
-          return OrganizationService.update(
-               {name: params.name},
-               {
-                    organizationId: params.id,
-                    role: "admin"
-               }
-          )
-     }
+  { method: "POST", path: "/v1/organizations/create", auth: true },
+  async (body: CreateOrganizationInput): Promise<{ id: string }> => {
+    const input = CreateOrganizationSchema.parse(body)
+    const { userID } = getAuthData()
+    return OrganizationService.create(input, userID)
+  }
 )
 
 export const getOrganization = api(

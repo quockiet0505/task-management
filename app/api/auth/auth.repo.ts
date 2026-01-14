@@ -1,4 +1,4 @@
-import { db } from "../../../db"
+import { db } from "../../db"
 import { users } from "../../../db/schema/users"
 import { organizations } from "../../../db/schema/organizations"
 import { organizationMembers } from "../../../db/schema/organization_members"
@@ -52,5 +52,15 @@ export const AuthRepo = {
       .limit(1)
     return res[0]
   }, 
+
+  async findUserById(id: string) {
+    const res = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1)
+    return res[0]
+  }
+  
 
 }

@@ -18,7 +18,8 @@ CREATE TABLE "tasks" (
 	"priority" text NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"assigned_to" uuid,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"due_date" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -33,5 +34,3 @@ ALTER TABLE "organization_members" ADD CONSTRAINT "organization_members_user_id_
 ALTER TABLE "organization_members" ADD CONSTRAINT "organization_members_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_assigned_to_users_id_fk" FOREIGN KEY ("assigned_to") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
--- Add due_date to tasks
-ALTER TABLE "tasks" ADD COLUMN "due_date" timestamp;

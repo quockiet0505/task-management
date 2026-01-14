@@ -2,68 +2,44 @@ import bcrypt from "bcryptjs"
 import { APIError, ErrCode } from "encore.dev/api"
 import { AuthRepo } from "./auth.repo"
 import type { RegisterInput, LoginInput } from "./auth.types"
-import { signToken } from "./token"
+import jwt from "jsonwebtoken"
+import { secret } from "encore.dev/config"
+
+
+const AUTH_SECRET = secret("AUTH_SECRET")
 
 export const AuthService = {
   // REGISTER
   async register(input: RegisterInput) {
     const existing = await AuthRepo.findUserByEmail(input.email)
     if (existing) {
-      throw new APIError(
-        ErrCode.AlreadyExists,
-        "Email already exists"
-      )
+      throw new APIError(ErrCode.AlreadyExists, "Email already exists")
     }
 
-    const passwordHash = await bcrypt.hash(input.password, 10)
+    const hash = await bcrypt.hash(input.password, 10)
+    const user = await AuthRepo.createUser({ email: input.email, passwordHash: hash })
 
-    const user = await AuthRepo.createUser({
-      email: input.email,
-      passwordHash,
-    })
+    // Create a default organization for the user and add as admin
+    const org = await AuthRepo.createOrganization(`Org of ${input.email}`)
+    await AuthRepo.addMember({ userId: user.id, organizationId: org.id, role: "admin" })
 
-    //  JWT 
-    const token = signToken({ userID: user.id })
-
-    return {
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-      },
-    }
+    const token = jwt.sign({ userID: user.id }, AUTH_SECRET(), { expiresIn: "7d" })
+    return { userId: user.id, token, defaultOrganizationId: org.id }
   },
-
 
   // LOGIN
   async login(input: LoginInput) {
     const user = await AuthRepo.findUserByEmail(input.email)
     if (!user) {
-      throw new APIError(
-        ErrCode.Unauthenticated,
-        "Invalid email or password"
-      )
+      throw new APIError(ErrCode.Unauthenticated, "Invalid email or password")
     }
 
-    const ok = await bcrypt.compare(
-      input.password,
-      user.passwordHash
-    )
+    const ok = await bcrypt.compare(input.password, user.passwordHash)
     if (!ok) {
-      throw new APIError(
-        ErrCode.Unauthenticated,
-        "Invalid email or password"
-      )
+      throw new APIError(ErrCode.Unauthenticated, "Invalid email or password")
     }
 
-    const token = signToken({ userID: user.id })
-
-    return {
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-      },
-    }
+    const token = jwt.sign({ userID: user.id }, AUTH_SECRET(), { expiresIn: "7d" })
+    return { userId: user.id, token }
   },
 }

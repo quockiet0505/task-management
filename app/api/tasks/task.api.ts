@@ -11,9 +11,7 @@ import type {
   UpdateTaskInput,
   ListTaskInput,
 } from "./task.types"
-
-
-import {requireRole} from "../../api/auth/authorization.service"
+import { requireRole } from "../../api/auth/authorization.service"
 
 // - `POST /v1/tasks` - List tasks (with filters)
 // - `GET /v1/tasks/:id` - Get task details
@@ -22,70 +20,57 @@ import {requireRole} from "../../api/auth/authorization.service"
 // - `DELETE /v1/tasks/:id` - Delete task
 
 export const listTasks = api(
-  { method: "POST", path: "/v1/tasks", auth: true},
-  async (body: ListTaskInput & {organizationID: string}) => {
+  { method: "POST", path: "/v1/tasks", auth: true },
+  async (body: ListTaskInput & { organizationId: string }) => {
     const input = ListTaskSchema.parse(body)
     const auth = getAuthData()
 
-    await requireRole(auth.userID, body.organizationID, ["admin", "member"])
+    await requireRole(auth.userID, body.organizationId, ["admin", "member"])
 
-    return TaskService.list(input, body.organizationID)
+    return TaskService.list(input, body.organizationId)
   }
 )
 
 export const getTask = api(
-  { method: "GET", path: "/v1/tasks/:id", auth:true},
-  async (params: { id: string , organizationID: string}) => {
+  { method: "GET", path: "/v1/tasks/:id", auth: true },
+  async (params: { id: string; organizationId: string }) => {
     const auth = getAuthData()
-
-    await requireRole(auth.userID, params.organizationID, ["admin", "member"])
-
-    return TaskService.get(params.id, params.organizationID)
+    await requireRole(auth.userID, params.organizationId, ["admin", "member"])
+    return TaskService.get(params.id, params.organizationId)
   }
 )
 
 export const createTask = api(
   { method: "POST", path: "/v1/tasks/create", auth: true },
-  async (body: CreateTaskInput & {organizationID: string}) => {
+  async (body: CreateTaskInput & { organizationID: string; assignedTo?: string }) => {
     const input = CreateTaskSchema.parse(body)
     const auth = getAuthData()
 
     await requireRole(auth.userID, body.organizationID, ["admin"])
 
-    return TaskService.create(input, body.organizationID)
+    return TaskService.create(
+      { ...input, assignedTo: body.assignedTo },
+      body.organizationID
+    )
   }
 )
 
 export const updateTask = api(
   { method: "PUT", path: "/v1/tasks/:id", auth: true },
-  async (params: { id: string } & UpdateTaskInput & {organizationID: string}) => {
+  async (params: { id: string } & UpdateTaskInput & { organizationID: string }) => {
     const input = UpdateTaskSchema.parse(params)
     const auth = getAuthData()
     await requireRole(auth.userID, params.organizationID, ["admin", "member"])
 
-    return TaskService.update(
-      params.id,
-      input,
-      params.organizationID
-    )
+    return TaskService.update(params.id, input, params.organizationID)
   }
 )
 
 export const deleteTask = api(
   { method: "DELETE", path: "/v1/tasks/:id", auth: true },
-  async (params: { id: string; organizationId: string }) => {
+  async (params: { id: string; organizationID: string }) => {
     const auth = getAuthData()
-
-    await requireRole(
-      auth.userID,
-      params.organizationId,
-      ["admin"]
-    )
-
-    return TaskService.delete(
-      params.id,
-      params.organizationId,
-      "admin"
-    )
+    await requireRole(auth.userID, params.organizationID, ["admin"])
+    return TaskService.delete(params.id, params.organizationID)
   }
 )
