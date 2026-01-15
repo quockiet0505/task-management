@@ -2,7 +2,7 @@ import { SQLDatabase } from "encore.dev/storage/sqldb";
 import { drizzle } from "drizzle-orm/node-postgres";
 
 // Define the application database
-const TaskDB = new SQLDatabase("taskdb", {
+const TaskDB = new SQLDatabase("taskdb1", {
   migrations: {
     path: "migrations",
     source: "drizzle",

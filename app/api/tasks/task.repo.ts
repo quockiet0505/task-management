@@ -3,12 +3,14 @@ import { tasks } from "../../../db/schema/tasks"
 import { eq, and } from "drizzle-orm"
 
 export const TaskRepo = {
+  // create a new task
   create(data: {
     title: string
     status: "todo" | "in-progress" | "done"
     priority: "low" | "medium" | "high"
     organizationId: string
     assignedTo?: string
+    assignedBy: string
     dueDate?: string
   }) {
     return db
@@ -19,12 +21,14 @@ export const TaskRepo = {
         priority: data.priority,
         organizationId: data.organizationId,
         assignedTo: data.assignedTo,
+        assignedBy: data.assignedBy,
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
       })
       .returning()
       .then((r) => r[0])
   },
 
+  // get task by id and org id
   getById(id: string, orgId: string) {
     return db
       .select()
@@ -34,6 +38,7 @@ export const TaskRepo = {
       .then((r) => r[0])
   },
 
+  // list tasks by org
   list(orgId: string, filter: { status?: string; priority?: string }) {
     const cond = [eq(tasks.organizationId, orgId)]
     if (filter.status) cond.push(eq(tasks.status, filter.status as any))
@@ -42,6 +47,7 @@ export const TaskRepo = {
     return db.select().from(tasks).where(and(...cond))
   },
 
+  // update task
   update(
     id: string,
     orgId: string,

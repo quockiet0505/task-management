@@ -14,8 +14,20 @@ export const MemberRepo ={
      },
 
      // check member in organization
-
-
+     
+     findByUserAndOrg(userId: string, organizationId: string) {
+          return db
+            .select()
+            .from(organizationMembers)
+            .where(
+              and(
+                eq(organizationMembers.userId, userId),
+                eq(organizationMembers.organizationId, organizationId)
+              )
+            )
+            .then(res => res[0])
+        },
+        
      // create member
      addMember( data: {
           userId: string,

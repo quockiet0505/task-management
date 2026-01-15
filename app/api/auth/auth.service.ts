@@ -9,7 +9,7 @@ import { secret } from "encore.dev/config"
 const AUTH_SECRET = secret("AUTH_SECRET")
 
 export const AuthService = {
-  // REGISTER
+  // register
   async register(input: RegisterInput) {
     const existing = await AuthRepo.findUserByEmail(input.email)
     if (existing) {
@@ -19,21 +19,26 @@ export const AuthService = {
     const hash = await bcrypt.hash(input.password, 10)
     const user = await AuthRepo.createUser({ email: input.email, passwordHash: hash })
 
-    // Create a default organization for the user and add as admin
-    const org = await AuthRepo.createOrganization(`Org of ${input.email}`)
-    await AuthRepo.addMember({ userId: user.id, organizationId: org.id, role: "admin" })
-
+    // Create 
     const token = jwt.sign({ userID: user.id }, AUTH_SECRET(), { expiresIn: "7d" })
-    return { userId: user.id, token, defaultOrganizationId: org.id }
+    return { userId: user.id, token}
   },
 
-  // LOGIN
+  // login
   async login(input: LoginInput) {
     const user = await AuthRepo.findUserByEmail(input.email)
     if (!user) {
       throw new APIError(ErrCode.Unauthenticated, "Invalid email or password")
     }
 
+    // check isActive
+    if (!user.isActive) {
+      throw new APIError(
+        ErrCode.PermissionDenied,
+        "Account has been disabled"
+      )
+    }
+  
     const ok = await bcrypt.compare(input.password, user.passwordHash)
     if (!ok) {
       throw new APIError(ErrCode.Unauthenticated, "Invalid email or password")

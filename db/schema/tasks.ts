@@ -10,6 +10,7 @@ export const tasks = pgTable("tasks", {
   organizationId: uuid("organization_id")
     .references(() => organizations.id)
     .notNull(),
+  assignedBy: uuid("assigned_by").references(() => users.id),
   assignedTo: uuid("assigned_to").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   dueDate: timestamp("due_date"),

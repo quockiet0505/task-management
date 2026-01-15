@@ -1,14 +1,19 @@
-//   CreateMemberSchema,
-//   UpdateMemberSchema,
-//   ListMemberSchema,
 
 import { z } from "zod"
 
 export const CreateMemberSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  userId: z.string().uuid("Invalid user ID"),
+  email: z.email("Invalid email address"),
+  userId: z.uuid("Invalid user ID"),
   role: z.enum(["admin", "member"]),
 })
 
 export const UpdateMemberSchema = CreateMemberSchema.partial()
+
+// Input schema
+ export const AddMemberSchema = z.object({
+  organizationId: z.uuid(),
+  userId: z.uuid(),
+  role: z.enum(["admin", "member"]),
+})
+
 

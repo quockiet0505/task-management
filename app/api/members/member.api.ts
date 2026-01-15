@@ -1,16 +1,18 @@
-import { api } from "encore.dev/api"
+import { api, APIError, ErrCode  } from "encore.dev/api"
 import { getAuthData } from "~encore/auth"
 import {
   CreateMemberSchema,
   UpdateMemberSchema,
+  AddMemberSchema,
 } from "../../../lib/validation/members"
 import { MemberService } from "./member.service"
 import { requireRole} from "../auth/authorization.service"
+import { AuthRepo } from "../auth/auth.repo"
 
 type Role = "admin" | "member"
 
 // list member Organization
-export const listMembers = api(
+export const listMembersFromOrg = api(
      {method: "POST", path:"/v1/organization/:organizationId/members", auth:true},
      async(params: {organizationId: string}) =>{
           const auth = getAuthData()
@@ -26,35 +28,11 @@ export const listMembers = api(
      }
 )
 
-// create member in organization
-
-export const createMember = api(
-     {method: "POST", path:"/v1/organization/:organizationId/members/create", auth:true},
-     async(params: {organizationId: string} & {userId: string, role: Role}) =>{
-          const input = CreateMemberSchema.parse(params)
-          const auth = getAuthData()
-          
-          // only admin can add member
-          await requireRole(
-               auth.userID,
-               params.organizationId,
-               ["admin"]
-          )
-
-          return MemberService.addMember({
-               userId: input.userId,
-               organizationId: params.organizationId,
-               role: input.role
-          })
-     }
-)
-
 // update member role in organization
 
-export const updateMember = api(
+export const updateMemberFromOrg = api(
      {method: "PUT", path:"/v1/organization/:organizationId/members/update", auth:true},
      async(params: {organizationId: string} & {userId: string, role: Role}) =>{
-          // const input = UpdateMemberSchema.parse(params)
           const auth = getAuthData()
           
           // only admin can update member
@@ -73,7 +51,7 @@ export const updateMember = api(
 )
 // delete member from organization
 
-export const deleteMember = api(
+export const deleteMemberFromOrg = api(
      {method: "DELETE", path:"/v1/organization/:organizationId/members/delete", auth:true},
      async(params: {organizationId: string} & {userId: string}) =>{
           const auth = getAuthData()
@@ -90,4 +68,35 @@ export const deleteMember = api(
                organizationId: params.organizationId
           })
      }
+)
+
+type AddMemberInput = {
+  organizationId: string;
+  userId: string;
+  role: "admin" | "member";
+}
+
+// Admin-only
+export const addToOrganization = api(
+  { method: "POST", path: "/v1/organizations/members/add", auth: true },
+  async (body: AddMemberInput): Promise<void> => {
+    const input = AddMemberSchema.parse(body)
+    const { userID } = getAuthData()
+
+    // Only org admins
+    await requireRole(userID, input.organizationId, ["admin"])
+
+    // Ensure target user exists
+    const target = await AuthRepo.findUserById(input.userId)
+    if (!target) {
+      throw new APIError(ErrCode.NotFound, "User to add not found")
+    }
+
+    // Add membership
+    await AuthRepo.addMember({
+      userId: input.userId,
+      organizationId: input.organizationId,
+      role: input.role,
+    })
+  }
 )

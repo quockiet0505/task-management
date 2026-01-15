@@ -16,7 +16,7 @@ export const createOrganization = api(
   }
 )
 
-export const getOrganization = api(
+export const getOrganizationById = api(
      {method: "GET", path: "/v1/organizations/:id"},
      async(params: {id: string}) =>{
           return OrganizationService.getById(params.id)

@@ -9,7 +9,7 @@ export async function requireRole(
   const member = await AuthRepo.getMembershipByOrg(userId, organizationId)
 
   if (!member) {
-    // Not a member of the organization → permission denied
+    // Not a member of the organization, permission denied
     throw new APIError(ErrCode.PermissionDenied, "Not a member of the organization")
   }
 

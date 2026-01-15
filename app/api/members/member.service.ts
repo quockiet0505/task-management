@@ -9,6 +9,7 @@ export const MemberService = {
     return MemberRepo.listByOrganization(organizationId)
   },
 
+  // add member to org
   async addMember(data: {
     userId: string
     organizationId: string
@@ -34,6 +35,7 @@ export const MemberService = {
     return { message: "Member added successfully" }
   },
 
+  // update member role in org
   async updateMember(data: {
     userId: string
     organizationId: string

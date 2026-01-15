@@ -31,7 +31,7 @@ export const listTasks = api(
   }
 )
 
-export const getTask = api(
+export const getTaskById = api(
   { method: "GET", path: "/v1/tasks/:id", auth: true },
   async (params: { id: string; organizationId: string }) => {
     const auth = getAuthData()
@@ -42,18 +42,28 @@ export const getTask = api(
 
 export const createTask = api(
   { method: "POST", path: "/v1/tasks/create", auth: true },
-  async (body: CreateTaskInput & { organizationID: string; assignedTo?: string }) => {
+  async (
+    body: CreateTaskInput & {
+      organizationID: string
+      assignedTo?: string
+    }
+  ) => {
     const input = CreateTaskSchema.parse(body)
     const auth = getAuthData()
 
     await requireRole(auth.userID, body.organizationID, ["admin"])
 
     return TaskService.create(
-      { ...input, assignedTo: body.assignedTo },
+      {
+        ...input,
+        assignedBy: auth.userID,      
+        assignedTo: body.assignedTo,
+      },
       body.organizationID
     )
   }
 )
+
 
 export const updateTask = api(
   { method: "PUT", path: "/v1/tasks/:id", auth: true },

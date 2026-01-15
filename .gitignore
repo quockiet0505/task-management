@@ -5,3 +5,11 @@ encore.gen.cue
 node_modules
 /encore.gen
 encore.env
+.env
+.secrets.local.cue
+.vscode/
+.DS_Store
+
+bun.lock
+
+*.log
