@@ -1,1 +1,0 @@
-AUTH_SECRET: "super-secret-key-123"
