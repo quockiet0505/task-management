@@ -117,9 +117,10 @@ encore run
 - Authenticated requests include session context automatically via Encore
 
 Example Endpoints
-POST   /auth/register
-POST   /auth/login
-GET    /tasks
-POST   /tasks
-PUT    /tasks/:id
-DELETE /tasks/:id
+   - `POST /v1/auth/register` - User registration
+   - `POST /v1/auth/login` - User login
+   - `POST /v1/tasks` - List tasks (with filters)
+   - `GET /v1/tasks/:id` - Get task details
+   - `POST /v1/tasks/create` - Create task
+   - `PUT /v1/tasks/:id` - Update task
+   - `DELETE /v1/tasks/:id` - Delete task
