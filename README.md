@@ -1,38 +1,125 @@
-# Empty Encore TS Template
+# Encore TypeScript Starter
 
-## Developing locally
+A starter template for building backend services with **Encore.dev**, **TypeScript**, **Drizzle ORM**, and **PostgreSQL**.
 
 When you have [installed Encore](https://encore.dev/docs/ts/install), you can create a new Encore application and clone this example with this command.
 
+---
+
+# Task Management API
+
+## Overview
+
+This project is part of **Week 2 of the Backend Intern Training Program – 42Volta Platform**.
+
+The goal of Week 2 is to build a **production-style backend API** using:
+
+- Encore.dev
+- TypeScript
+- Drizzle ORM
+- PostgreSQL
+
+With a focus on:
+
+- Authentication & Authorization
+- Multi-tenancy (organization-based data isolation)
+- Validation & error handling
+- Clean service-layer architecture
+
+> **Note**  
+> This is a training project, not part of the Volta production codebase.
+
+---
+
+## Features
+
+- User registration & login
+- Session-based authentication
+- Organization-based multi-tenancy
+- Role-based access control (admin / member)
+- Task management (CRUD)
+- Validation using Zod
+- Clean architecture: **Handler → Service → Repository**
+
+---
+
+## Tech Stack
+
+- Encore.dev
+- TypeScript
+- Bun / Node.js
+- PostgreSQL
+- Drizzle ORM
+- Better-auth
+- Zod
+
+---
+
+## Requirements
+
+Before starting, make sure you have installed:
+
+- Node.js >= 18
+- Bun
+- PostgreSQL >= 14
+- Encore CLI
+
+---
+
+## Environment Setup
+
+### 1. Clone repository
+
 ```bash
-encore app create my-app-name --example=ts/empty
+git clone <your-repo-url> && cd task-management-api
 ```
 
-## Running locally
-```bash
+### 2. Install dependencies
+```bash 
+bun install 
+```
+
+## Database Setup
+### Generate migrations
+```bash 
+bun drizzle-kit generate
+```
+
+### Run migrations
+```bash 
+bun drizzle-kit migrate
+```
+
+## Running the Application
+
+### Start Encore in development mode:
+
+```bash 
 encore run
 ```
 
-While `encore run` is running, open <http://localhost:9400/> to view Encore's [local developer dashboard](https://encore.dev/docs/ts/observability/dev-dash).
+### Encore will:
 
-## Deployment
+### Start the API server
 
-Deploy your application to a staging environment in Encore's free development cloud:
+### Spin up required infrastructure
 
-```bash
-git add -A .
-git commit -m 'Commit message'
-git push encore
-```
 
-Then head over to the [Cloud Dashboard](https://app.encore.dev) to monitor your deployment and find your production URL.
+- While `encore run` is running, open <http://localhost:9400/> to view Encore's [local developer dashboard](https://encore.dev/docs/ts/observability/dev-dash).
 
-From there you can also connect your own AWS or GCP account to use for deployment.
+## API Overview
+- Authentication Flow
 
-Now off you go into the clouds!
+- User registers or logs in
 
-## Testing
+- A session is created using Better-auth
 
-```bash
-encore test
-```
+- Authenticated requests include session context automatically via Encore
+
+Example Endpoints
+POST   /auth/register
+POST   /auth/login
+GET    /tasks
+POST   /tasks
+PUT    /tasks/:id
+DELETE /tasks/:id
