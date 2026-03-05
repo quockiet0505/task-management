@@ -26,38 +26,26 @@ jobs:
       # Find the new VM instance dynamically
       - name: Get MIG instance
         run: |
+          # Get MIG
           MIG_NAME=$(gcloud compute instance-groups managed list \
             --project=voltarocks-42-sandbox \
             --zones=asia-southeast1-a \
             --filter="baseInstanceName=task-mgmt" \
-            --format="value(name)")
-          
+            --format="value(name)" | head -n 1)
+
           echo "Found MIG: $MIG_NAME"
 
           INSTANCE=$(gcloud compute instance-groups managed list-instances $MIG_NAME \
             --project=voltarocks-42-sandbox \
             --zone=asia-southeast1-a \
             --format="value(instance.basename())" | head -n 1)
-          
+
           if [ -z "$INSTANCE" ]; then
             echo "Error: No instance found in MIG $MIG_NAME"
             exit 1
           fi
 
           echo "INSTANCE_NAME=$INSTANCE" >> $GITHUB_ENV
-          echo "Deploying to instance: $INSTANCE"
-
-      # Wait for VM to be ready
-      - name: Wait for VM to be RUNNING
-        run: |
-          until gcloud compute instances describe ${{ env.INSTANCE_NAME }} \
-            --zone=asia-southeast1-a \
-            --project=voltarocks-42-sandbox \
-            --format="get(status)" | grep -q RUNNING; do
-            echo "Waiting for instance to be ready..."
-            sleep 10
-          done
-
       # Upload files and deploy stack
       - name: Deploy stack
         run: |
@@ -101,5 +89,5 @@ jobs:
 
               echo 'Deploying Monitoring & DB Stack...'
               sudo docker network create -d overlay --attachable app_network || true
-                            sudo docker stack deploy -c docker-compose.monitoring.yml core_stack --with-registry-auth
+              sudo docker stack deploy -c docker-compose.monitoring.yml core_stack --with-registry-auth
             "
