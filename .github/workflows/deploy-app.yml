@@ -30,28 +30,40 @@ jobs:
           curl -L https://encore.dev/install.sh | bash
           echo "$HOME/.encore/bin" >> $GITHUB_PATH
 
-      # Build image using Encore (No Dockerfile needed)
+      # Build image using Encore
       - name: Build & Push Image with Encore
         run: |
+        
+          # 2. Build và Push App
           IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
           cd app 
-          encore build docker $IMAGE
+          encore build docker $IMAGE --app ./app
           docker push $IMAGE
 
       # Get VM instance ID
       - name: Get MIG instance
         run: |
-          MIG_NAME=$(gcloud compute instance-groups managed list --zones asia-southeast1-a --filter="baseInstanceName=task-management" --format="value(name)")
-          INSTANCE=$(gcloud compute instance-groups managed list-instances $MIG_NAME --zone asia-southeast1-a --format="value(instance.basename())" | head -n 1)
+          MIG_NAME=$(gcloud compute instance-groups managed list --project=voltarocks-42-sandbox --zones=asia-southeast1-a --filter="baseInstanceName=task-mgmt" --format="value(name)")
+          INSTANCE=$(gcloud compute instance-groups managed list-instances $MIG_NAME --project=voltarocks-42-sandbox --zone=asia-southeast1-a --format="value(instance.basename())" | head -n 1)
+          
+          if [ -z "$INSTANCE" ]; then
+            echo "Error: No instance found in MIG $MIG_NAME"
+            exit 1
+          fi
+          
           echo "INSTANCE_NAME=$INSTANCE" >> $GITHUB_ENV
 
       # SSH and Deploy with Docker Secret
       - name: Deploy Service with Docker Secrets
         run: |
+          export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
+
           gcloud compute ssh ${{ env.INSTANCE_NAME }} \
             --zone=asia-southeast1-a \
             --project=voltarocks-42-sandbox \
             --tunnel-through-iap \
+            $GCLOUD_SSH_OPTS \
+            --quiet \
             --command="
               set -e
               sudo gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
