@@ -34,19 +34,18 @@ jobs:
         run: |
           IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
 
-          # tránh Encore scan SST infra
           rm -rf infra
-
           cd app
 
-          # tạo config secret tạm cho Encore compile
-          cat <<EOF > encore.config.yaml
-          secrets:
-            AUTH_SECRET: dummy_secret_for_build
+          cat <<EOF > encore.config.json
+          {
+            "secrets": {
+              "AUTH_SECRET": "dummy_secret_for_build"
+            }
+          }
           EOF
 
-          # build docker image
-          encore build docker $IMAGE --push --config encore.config.yaml
+          encore build docker $IMAGE --push --config encore.config.json
 
       # Get VM instance ID
       - name: Get MIG instance
