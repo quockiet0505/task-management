@@ -30,6 +30,7 @@ jobs:
           curl -L https://encore.dev/install.sh | bash
           echo "$HOME/.encore/bin" >> $GITHUB_PATH
 
+      # Build image using Encore
       - name: Build & Push Image with Encore
         run: |
           IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
@@ -73,35 +74,44 @@ jobs:
             --quiet \
             --command="
               set -e
+
               sudo gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
               IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
+
+              SHORT_SHA=\$(echo '${{ github.sha }}' | cut -c1-7)
+              SECRET_NAME=\"task-env-\$SHORT_SHA\"
               RULE='Host(\`duongquockiet.id.vn\`) && PathPrefix(\`/v1/\`)'
-              
+
               echo 'Pulling image...'
               sudo docker pull \$IMAGE
 
-
-              # Create Docker Secret for .env
-              SECRET_NAME=\"task_env_\${{ github.sha }}\"
+              echo 'Creating env file...'
               echo \"DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@core_stack_postgres:5432/appdb\" > prod.env
               echo \"AUTH_SECRET=${{ secrets.AUTH_SECRET }}\" >> prod.env
-              cat prod.env | sudo docker secret create \$SECRET_NAME -
+
+              echo 'Creating docker secret...'
+              cat prod.env | sudo docker secret create \$SECRET_NAME - || true
               rm prod.env
 
-              # Update or Create Swarm Service
               if sudo docker service inspect task-management > /dev/null 2>&1; then
-                echo 'Updating service...'
-                OLD_SECRET=\$(sudo docker service inspect task-management --format '{{range .Spec.TaskTemplate.ContainerSpec.Secrets}}{{.SecretName}}{{end}}')
+                echo 'Updating existing service...'
+
+    
+                OLD_SECRETS=\$(sudo docker service inspect task-management \
+                  --format '{{range .Spec.TaskTemplate.ContainerSpec.Secrets}}--secret-rm {{.SecretName}} {{end}}' \
+                  2>/dev/null || true)
 
                 sudo docker service update \
                   --image \$IMAGE \
                   --with-registry-auth \
                   --secret-add source=\$SECRET_NAME,target=/.env \
-                  --secret-rm \$OLD_SECRET \
+                  \$OLD_SECRETS \
                   --force \
                   task-management
+
               else
                 echo 'Creating new service...'
+
                 sudo docker service create \
                   --name task-management \
                   --replicas 1 \
