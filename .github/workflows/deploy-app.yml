@@ -38,7 +38,9 @@ jobs:
 
           cd app
           
-          export ENCORE_ENV_AUTH_SECRET="${{ secrets.AUTH_SECRET }}"
+          encore build docker $IMAGE \
+          --push \
+          --env AUTH_SECRET=${{ secrets.AUTH_SECRET }}
           encore build docker $IMAGE --push
 
       # Get VM instance ID
