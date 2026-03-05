@@ -4,11 +4,11 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 export default defineConfig({
-  schema: './db/schema/*', 
+  schema: '../db/schema/*', 
   out: './drizzle/migrations',
   dialect: 'postgresql',
   dbCredentials: {
     // Default to localhost for IAP Tunnel migration
-    url: process.env.DATABASE_URL || 'postgres://admin:adminpassword@localhost:5432/appdb', 
+    url: process.env.DATABASE_URL || 'bad connection string for iap tunnel', 
   },
 });

@@ -80,8 +80,8 @@ jobs:
 
               SHORT_SHA=\$(echo '${{ github.sha }}' | cut -c1-7)
               SECRET_NAME=\"task-env-\$SHORT_SHA\"
-              RULE='Host(\`duongquockiet.id.vn\`) && PathPrefix(\`/v1/\`)'
-
+              RULE='(Host(\`duongquockiet.id.vn\`) && PathPrefix(\`/v1/\`)) || Path(\`/health\`)'
+             
               echo 'Pulling image...'
               sudo docker pull \$IMAGE
 

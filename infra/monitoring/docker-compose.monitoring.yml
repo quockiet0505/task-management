@@ -29,6 +29,11 @@ services:
 
   postgres:
     image: asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/postgres-walg:15
+    ports:
+      - target: 5432
+        published: 5432
+        protocol: tcp
+        
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: adminpassword
