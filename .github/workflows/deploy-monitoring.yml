@@ -27,13 +27,18 @@ jobs:
       - name: Get MIG instance
         run: |
           # Get MIG
+          echo "Listing MIGs..."
+          gcloud compute instance-groups managed list \
+            --project=voltarocks-42-sandbox \
+            --zones=asia-southeast1-a
+
           MIG_NAME=$(gcloud compute instance-groups managed list \
             --project=voltarocks-42-sandbox \
             --zones=asia-southeast1-a \
-            --filter="baseInstanceName=task-mgmt" \
+            --filter="name~task-mig-final" \
             --format="value(name)" | head -n 1)
 
-          echo "Found MIG: $MIG_NAME"
+          echo "Selected MIG: $MIG_NAME"
 
           INSTANCE=$(gcloud compute instance-groups managed list-instances $MIG_NAME \
             --project=voltarocks-42-sandbox \
