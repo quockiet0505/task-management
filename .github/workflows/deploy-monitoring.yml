@@ -59,9 +59,10 @@ jobs:
       # Upload files and deploy stack
       - name: Deploy stack
         run: |
-          # Fix SSH key strict checking to avoid manual prompt (Lỗi treo SSH)
           export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
+          export GCLOUD_SCP_OPTS="--scp-flag=-oStrictHostKeyChecking=no --scp-flag=-oUserKnownHostsFile=/dev/null"
 
+          # 1. SSH 
           gcloud compute ssh ${{ env.INSTANCE_NAME }} \
             --zone=asia-southeast1-a \
             --project=voltarocks-42-sandbox \
@@ -74,16 +75,16 @@ jobs:
               sudo gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
             "
           
-          # Copy files via IAP Tunnel
+          # 2. SCP để copy file 
           gcloud compute scp infra/monitoring/docker-compose.monitoring.yml infra/monitoring/prometheus.yml \
             ${{ env.INSTANCE_NAME }}:/tmp/ \
             --zone=asia-southeast1-a \
             --project=voltarocks-42-sandbox \
             --tunnel-through-iap \
-            $GCLOUD_SSH_OPTS \
+            $GCLOUD_SCP_OPTS \
             --quiet
 
-          # Move files and deploy using Docker Stack
+          # 3. SSH  deploy Docker Swarm
           gcloud compute ssh ${{ env.INSTANCE_NAME }} \
             --zone=asia-southeast1-a \
             --project=voltarocks-42-sandbox \
@@ -97,8 +98,6 @@ jobs:
               cd /opt/monitoring
 
               echo 'Deploying Monitoring & DB Stack...'
-              
               sudo docker network create -d overlay --attachable app_network || true
-              
-              sudo docker stack deploy -c docker-compose.monitoring.yml core_stack --with-registry-auth
+                            sudo docker stack deploy -c docker-compose.monitoring.yml core_stack --with-registry-auth
             "
