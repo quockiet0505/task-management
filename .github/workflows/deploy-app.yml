@@ -38,9 +38,7 @@ jobs:
 
           cd app
           
-          encore build docker $IMAGE \
-          --push \
-          --env AUTH_SECRET=${{ secrets.AUTH_SECRET }}
+          export ENCORE_ENV_AUTH_SECRET="${{ secrets.AUTH_SECRET }}"
           encore build docker $IMAGE --push
 
       # Get VM instance ID
@@ -103,7 +101,7 @@ jobs:
                   --with-registry-auth \
                   --label traefik.enable=true \
                   --label traefik.http.routers.app.rule=\"\$RULE\" \
-                  --label traefik.http.services.app.loadbalancer.server.port=4000 \
+                  --label traefik.http.services.app.loadbalancer.server.port=8080 \
                   --secret source=\$SECRET_NAME,target=/.env \
                   \$IMAGE
               fi
