@@ -5,7 +5,7 @@ dotenv.config();
 
 export default defineConfig({
   schema: '../db/schema/*', 
-  out: './drizzle/migrations',
+  out: './migrations',
   dialect: 'postgresql',
   dbCredentials: {
     // Default to localhost for IAP Tunnel migration

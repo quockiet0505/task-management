@@ -1,7 +1,6 @@
 # Base on official Postgres 15
 FROM postgres:15
 
-# Install dependencies and WAL-G for PITR Backup
 RUN apt-get update && \
     apt-get install -y wget ca-certificates lzop pv zstd && \
     wget https://github.com/wal-g/wal-g/releases/download/v3.0.3/wal-g-pg-ubuntu-20.04-amd64.tar.gz && \

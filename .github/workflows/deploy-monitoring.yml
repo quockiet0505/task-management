@@ -6,6 +6,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     permissions:
       id-token: write
       contents: read
@@ -23,22 +24,13 @@ jobs:
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
 
-      # Find the new VM instance dynamically
       - name: Get MIG instance
         run: |
-          # Get MIG
-          echo "Listing MIGs..."
-          gcloud compute instance-groups managed list \
-            --project=voltarocks-42-sandbox \
-            --zones=asia-southeast1-a
-
           MIG_NAME=$(gcloud compute instance-groups managed list \
             --project=voltarocks-42-sandbox \
             --zones=asia-southeast1-a \
             --filter="name~task-mig-final" \
             --format="value(name)" | head -n 1)
-
-          echo "Selected MIG: $MIG_NAME"
 
           INSTANCE=$(gcloud compute instance-groups managed list-instances $MIG_NAME \
             --project=voltarocks-42-sandbox \
@@ -46,18 +38,17 @@ jobs:
             --format="value(instance.basename())" | head -n 1)
 
           if [ -z "$INSTANCE" ]; then
-            echo "Error: No instance found in MIG $MIG_NAME"
+            echo "No instance found"
             exit 1
           fi
 
           echo "INSTANCE_NAME=$INSTANCE" >> $GITHUB_ENV
-      # Upload files and deploy stack
+
       - name: Deploy stack
         run: |
           export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
           export GCLOUD_SCP_OPTS="--scp-flag=-oStrictHostKeyChecking=no --scp-flag=-oUserKnownHostsFile=/dev/null"
 
-          # 1. SSH 
           gcloud compute ssh ${{ env.INSTANCE_NAME }} \
             --zone=asia-southeast1-a \
             --project=voltarocks-42-sandbox \
@@ -69,8 +60,7 @@ jobs:
               sudo mkdir -p /opt/monitoring
               sudo gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
             "
-          
-          # 2. SCP để copy file 
+
           gcloud compute scp infra/monitoring/docker-compose.monitoring.yml infra/monitoring/prometheus.yml \
             ${{ env.INSTANCE_NAME }}:/tmp/ \
             --zone=asia-southeast1-a \
@@ -79,7 +69,6 @@ jobs:
             $GCLOUD_SCP_OPTS \
             --quiet
 
-          # 3. SSH  deploy Docker Swarm
           gcloud compute ssh ${{ env.INSTANCE_NAME }} \
             --zone=asia-southeast1-a \
             --project=voltarocks-42-sandbox \
@@ -88,11 +77,18 @@ jobs:
             --quiet \
             --command="
               set -e
+
               sudo mv /tmp/docker-compose.monitoring.yml /opt/monitoring/
               sudo mv /tmp/prometheus.yml /opt/monitoring/
+
               cd /opt/monitoring
 
-              echo 'Deploying Monitoring & DB Stack...'
               sudo docker network create -d overlay --attachable app_network || true
-              sudo docker stack deploy -c docker-compose.monitoring.yml core_stack --with-registry-auth
+
+              echo 'Deploying monitoring stack...'
+
+              sudo docker stack deploy \
+                -c docker-compose.monitoring.yml \
+                core_stack \
+                --with-registry-auth
             "

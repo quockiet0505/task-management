@@ -48,14 +48,15 @@ export default $config({
     new gcp.compute.Firewall("task-allow-web-final", {
       network: vpc.id,
       allows: [{ protocol: "tcp", ports: ["80", "443"] }],
-      sourceRanges: ["130.211.0.0/22", "35.191.0.0/16"],
+      // sourceRanges: ["130.211.0.0/22", "35.191.0.0/16"],
+      sourceRanges: ["0.0.0.0/0"],
       targetTags: ["web-server"],
     });
 
     new gcp.compute.Firewall("task-allow-ssh-final", {
       network: vpc.id,
       allows: [{ protocol: "tcp", ports: ["22"] }],
-      sourceRanges: ["35.235.240.0/20"],
+      sourceRanges: ["0.0.0.0/0"],
       targetTags: ["web-server"],
     });
 
