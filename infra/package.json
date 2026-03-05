@@ -1,0 +1,25 @@
+{
+  "name": "infra",
+  "private": true,
+  "devDependencies": {
+    "@types/aws-lambda": "8.10.161",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@pulumi/gcp": "^9.14.0",
+    "@pulumi/pulumi": "^3.224.0",
+    "sst": "4.1.9"
+  },
+  "version": "1.0.0",
+  "description": "To install dependencies:",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

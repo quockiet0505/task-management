@@ -1,0 +1,107 @@
+name: CD - Deploy Monitoring Stack
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Find the new VM instance dynamically
+      - name: Get MIG instance
+        run: |
+          # 1. 
+          MIG_NAME=$(gcloud compute instance-groups managed list \
+            --project=voltarocks-42-sandbox \
+            --zones=asia-southeast1-a \
+            --filter="baseInstanceName=task-management" \
+            --format="value(name)")
+          
+          echo "Found MIG: $MIG_NAME"
+
+          # 2. 
+          INSTANCE=$(gcloud compute instance-groups managed list-instances $MIG_NAME \
+            --project=voltarocks-42-sandbox \
+            --zone=asia-southeast1-a \
+            --format="value(instance.basename())" | head -n 1)
+          
+          if [ -z "$INSTANCE" ]; then
+            echo "Error: No instance found in MIG $MIG_NAME"
+            exit 1
+          fi
+
+          echo "INSTANCE_NAME=$INSTANCE" >> $GITHUB_ENV
+          echo "Deploying to instance: $INSTANCE"
+
+      # Wait for VM to be ready
+      - name: Wait for VM to be RUNNING
+        run: |
+          until gcloud compute instances describe ${{ env.INSTANCE_NAME }} \
+            --zone=asia-southeast1-a \
+            --project=voltarocks-42-sandbox \
+            --format="get(status)" | grep -q RUNNING; do
+            echo "Waiting for instance to be ready..."
+            sleep 10
+          done
+
+      # Upload files and deploy stack
+      - name: Deploy stack
+        run: |
+          # Fix SSH key strict checking to avoid manual prompt
+          export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
+
+          gcloud compute ssh ${{ env.INSTANCE_NAME }} \
+            --zone=asia-southeast1-a \
+            --project=voltarocks-42-sandbox \
+            --tunnel-through-iap \
+            $GCLOUD_SSH_OPTS \
+            --quiet \
+            --command="
+              set -e
+              sudo mkdir -p /opt/monitoring
+              sudo gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
+            "
+          
+          # Copy files via IAP Tunnel
+          gcloud compute scp infra/monitoring/docker-compose.monitoring.yml infra/monitoring/prometheus.yml \
+            ${{ env.INSTANCE_NAME }}:/tmp/ \
+            --zone=asia-southeast1-a \
+            --project=voltarocks-42-sandbox \
+            --tunnel-through-iap \
+            $GCLOUD_SSH_OPTS \
+            --quiet
+
+          # Move files and deploy using Docker Stack
+          gcloud compute ssh ${{ env.INSTANCE_NAME }} \
+            --zone=asia-southeast1-a \
+            --project=voltarocks-42-sandbox \
+            --tunnel-through-iap \
+            $GCLOUD_SSH_OPTS \
+            --quiet \
+            --command="
+              set -e
+              sudo mv /tmp/docker-compose.monitoring.yml /opt/monitoring/
+              sudo mv /tmp/prometheus.yml /opt/monitoring/
+              cd /opt/monitoring
+
+              echo 'Deploying Monitoring & DB Stack...'
+              # Create network if not exists
+              sudo docker network create -d overlay --attachable app_network || true
+              
+              # Deploy stack with GAR auth
+              sudo docker stack deploy -c docker-compose.monitoring.yml core_stack --with-registry-auth
+            "

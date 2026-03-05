@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v3.6
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--entrypoints.web.address=:80"
+      - "--providers.swarm.endpoint=unix:///var/run/docker.sock"
+      - "--providers.swarm.watch=true"
+      - "--providers.swarm.exposedbydefault=false"
+      - "--providers.swarm.network=app_network"
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+      - target: 8080
+        published: 8080
+        protocol: tcp
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app_network
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+  postgres:
+    image: asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/postgres-walg:15
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: appdb
+      # Backup settings
+      WALG_GS_PREFIX: gs://voltarocks-postgres-backup
+      PGDATA: /var/lib/postgresql/data
+      WALG_COMPRESSION_METHOD: zstd
+      GOOGLE_APPLICATION_CREDENTIALS_AUTO: "true"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    command: >
+      postgres
+      -c wal_level=replica
+      -c archive_mode=on
+      -c archive_timeout=60
+      -c archive_command='wal-g wal-push %p'
+    networks:
+      - app_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - /opt/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.external-url=/prometheus'
+    networks:
+      - app_network
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.prometheus.rule=Host(`duongquockiet.id.vn`) && PathPrefix(`/prometheus`)"
+        - "traefik.http.routers.prometheus.priority=100"
+        - "traefik.http.routers.prometheus.entrypoints=web"
+        - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+    networks:
+      - app_network
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SERVER_DOMAIN=duongquockiet.id.vn
+      - GF_SERVER_ROOT_URL=https://duongquockiet.id.vn/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - app_network
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.grafana.rule=Host(`duongquockiet.id.vn`) && PathPrefix(`/grafana`)"
+        - "traefik.http.routers.grafana.priority=100"
+        - "traefik.http.routers.grafana.entrypoints=web"
+        - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+
+networks:
+  app_network:
+    external: true
+
+volumes:
+  pgdata:
+  grafana_data:
