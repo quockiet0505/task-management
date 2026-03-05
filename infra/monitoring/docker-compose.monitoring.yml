@@ -33,12 +33,14 @@ services:
       - target: 5432
         published: 5432
         protocol: tcp
-        
+    secrets:
+      - postgres_user
+      - postgres_password
+      - postgres_db
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: adminpassword
-      POSTGRES_DB: appdb
-      # Backup settings
+      POSTGRES_USER_FILE: /run/secrets/postgres_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_DB_FILE: /run/secrets/postgres_db
       WALG_GS_PREFIX: gs://voltarocks-postgres-backup
       PGDATA: /var/lib/postgresql/data
       WALG_COMPRESSION_METHOD: zstd
@@ -86,8 +88,10 @@ services:
 
   grafana:
     image: grafana/grafana:latest
+    secrets:
+      - grafana_admin_password
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_password
       - GF_SERVER_DOMAIN=duongquockiet.id.vn
       - GF_SERVER_ROOT_URL=https://duongquockiet.id.vn/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
@@ -110,3 +114,13 @@ networks:
 volumes:
   pgdata:
   grafana_data:
+
+secrets:
+  postgres_user:
+    external: true
+  postgres_password:
+    external: true
+  postgres_db:
+    external: true
+  grafana_admin_password:
+    external: true
