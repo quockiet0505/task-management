@@ -38,7 +38,7 @@ jobs:
 
           cd app
           
-          export ENCORE_ENV_AUTH_SECRET="${{ secrets.AUTH_SECRET }}"
+          printf "dummy_secret_for_build" | encore secret set --type local --non-interactive AUTH_SECRET
           encore build docker $IMAGE --push
 
       # Get VM instance ID
@@ -74,9 +74,11 @@ jobs:
               echo 'Pulling image...'
               sudo docker pull \$IMAGE
 
+
               # Create Docker Secret for .env
               SECRET_NAME=\"task_env_\${{ github.sha }}\"
               echo \"DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@core_stack_postgres:5432/appdb\" > prod.env
+              echo \"AUTH_SECRET=${{ secrets.AUTH_SECRET }}\" >> prod.env
               cat prod.env | sudo docker secret create \$SECRET_NAME -
               rm prod.env
 
