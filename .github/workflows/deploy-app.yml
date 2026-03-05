@@ -30,15 +30,15 @@ jobs:
           curl -L https://encore.dev/install.sh | bash
           echo "$HOME/.encore/bin" >> $GITHUB_PATH
 
-      # Build image using Encore
       - name: Build & Push Image with Encore
         run: |
-        
-          # 2. Build và Push App
           IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
-          cd app 
-          encore build docker $IMAGE --app ./app
-          docker push $IMAGE
+
+          # remove infra to prevent Encore scanning SST files
+          rm -rf infra
+
+          cd app
+          encore build docker $IMAGE --push
 
       # Get VM instance ID
       - name: Get MIG instance
