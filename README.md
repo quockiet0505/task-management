@@ -207,3 +207,7 @@ select \
 avatar \
 sonner
 ```
+
+docker build -t asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:v1 .
+
+docker push asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:v1

@@ -32,14 +32,16 @@ jobs:
           curl -L https://encore.dev/install.sh | bash
           echo "$HOME/.encore/bin" >> $GITHUB_PATH
 
-      # STEP 1: BUILD IMAGE
+      # STEP 1: BUILD IMAGES (Giữ nguyên build Backend + Thêm build Frontend)
       - name: Build & Push Image with Encore
         run: |
           IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
+          WEB_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:${{ github.sha }}
 
-          rm -rf infra web
+          # Build Backend
+          rm -rf infra
+        
           cd app
-
           cat <<EOF > encore.config.json
           {
             "secrets": {
@@ -47,11 +49,15 @@ jobs:
             }
           }
           EOF
-
           encore build docker $IMAGE --push --config encore.config.json
+          cd ..
 
-      # STEP 2: SCAN IMAGE (SECURITY GATE FOR VULNERABILITIES)
-      - name: Scan Image with Trivy
+          # Build Frontend 
+          docker build -t $WEB_IMAGE ./web
+          docker push $WEB_IMAGE
+
+      # STEP 2: SCAN IMAGES (Scan cả API và Web)
+      - name: Scan API Image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
@@ -62,6 +68,17 @@ jobs:
           scanners: 'vuln'
           severity: 'CRITICAL'
           trivyignores: '.trivyignore'
+
+      - name: Scan Web Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          scanners: 'vuln'
+          severity: 'CRITICAL'
       
       - name: Get MIG instance
         run: |
@@ -83,7 +100,7 @@ jobs:
 
           echo "INSTANCE_NAME=$INSTANCE" >> $GITHUB_ENV
 
-      # STEP 3: DEPLOY SERVICE (WITH SECRETS COMMAND, HEALTHCHECK & ROLLBACK)
+      # STEP 3: DEPLOY SERVICE
       - name: Deploy Service
         run: |
           export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
@@ -99,11 +116,13 @@ jobs:
               sudo gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
 
               IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
+              WEB_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:${{ github.sha }}
               SECRET_NAME=task-env-${{ github.sha }}
               RULE='(Host(\`duongquockiet.id.vn\`) && PathPrefix(\`/v1/\`)) || Path(\`/health\`)'
 
-              echo '1. Pulling image...'
+              echo '1. Pulling images...'
               sudo docker pull \$IMAGE
+              sudo docker pull \$WEB_IMAGE
 
               echo '2. Creating dynamic docker secret...'
               echo \"DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@postgres:5432/appdb\" > /tmp/prod.env
@@ -119,8 +138,6 @@ jobs:
               services:
                 api:
                   image: \${IMAGE}
-                  
-                  # [REQUIREMENT JAKE]: Parse external secret and export to env vars before running
                   command: >
                     /bin/sh -c '
                       set -a;
@@ -128,40 +145,48 @@ jobs:
                       set +a;
                       exec node --enable-source-maps /workspace/.encore/build/combined/combined/main.mjs
                     '
-                  
-                  # [REQUIREMENT JAKE]: Healthcheck for Rollback mechanism
                   healthcheck:
                     test: [\"CMD\", \"wget\", \"--no-verbose\", \"--tries=1\", \"--spider\", \"http://localhost:8080/health\"]
                     interval: 10s
                     timeout: 5s
                     retries: 3
                     start_period: 15s
-                    
                   networks:
                     - app_network
-                  
                   secrets:
                     - source: app_secret
                       target: app_secret
-                  
                   deploy:
                     replicas: 2
                     update_config:
                       parallelism: 1
                       delay: 10s
-                      # [REQUIREMENT JAKE]: Auto Rollback on Failure
                       failure_action: rollback
                       monitor: 15s
                     rollback_config:
                       parallelism: 1
                       failure_action: pause
-                    
                     labels:
                       - \"traefik.enable=true\"
                       - \"traefik.docker.network=app_network\"
                       - \"traefik.http.routers.app.entrypoints=web\"
                       - \"traefik.http.routers.app.rule=\${RULE}\"
+                      - \"traefik.http.routers.app.priority=100\"
                       - \"traefik.http.services.app.loadbalancer.server.port=8080\"
+
+                web:
+                  image: \${WEB_IMAGE}
+                  networks:
+                    - app_network
+                  deploy:
+                    replicas: 1
+                    labels:
+                      - \"traefik.enable=true\"
+                      - \"traefik.docker.network=app_network\"
+                      - \"traefik.http.routers.web-ui.entrypoints=web\"
+                      - \"traefik.http.routers.web-ui.rule=Host(\`duongquockiet.id.vn\`)\"
+                      - \"traefik.http.routers.web-ui.priority=10\"
+                      - \"traefik.http.services.web-ui.loadbalancer.server.port=80\"
 
               networks:
                 app_network:
@@ -169,12 +194,11 @@ jobs:
 
               secrets:
                 app_secret:
-                  # [REQUIREMENT JAKE]: Set external true
                   external: true
                   name: \${SECRET_NAME}
               EOF
 
               echo '4. Deploying App Stack...'
-              sudo env IMAGE=\$IMAGE SECRET_NAME=\$SECRET_NAME RULE=\"\$RULE\" \
+              sudo env IMAGE=\$IMAGE WEB_IMAGE=\$WEB_IMAGE SECRET_NAME=\$SECRET_NAME RULE=\"\$RULE\" \
                 docker stack deploy -c /tmp/docker-compose.app.yml task_stack --with-registry-auth
             "
