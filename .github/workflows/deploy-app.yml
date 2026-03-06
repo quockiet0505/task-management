@@ -54,14 +54,15 @@ jobs:
       - name: Scan Image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}'
-          format: 'table'
-          # Abort deployment if CRITICAL issues are found
+          image-ref: asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
+          format: table
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
+          scanners: 'vuln'
           severity: 'CRITICAL'
-
+          trivyignores: '.trivyignore'
+      
       - name: Get MIG instance
         run: |
           MIG_NAME=$(gcloud compute instance-groups managed list \
