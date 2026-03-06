@@ -1,4 +1,4 @@
-name: CD - Deploy Task Management App
+name: CD - Deploy Task Management App V2
 
 on:
   workflow_dispatch:
