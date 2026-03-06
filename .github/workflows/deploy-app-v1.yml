@@ -36,7 +36,7 @@ jobs:
         run: |
           IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
 
-          rm -rf infra
+          rm -rf infra web
           cd app
 
           cat <<EOF > encore.config.json
