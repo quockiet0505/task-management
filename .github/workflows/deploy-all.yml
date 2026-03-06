@@ -26,6 +26,7 @@ jobs:
       - name: Configure Docker
         run: gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
 
+      # STEP 1: INSTALL ENCORE & BUILD DOCKER IMAGE
       - name: Install Encore & Build Image
         run: |
           curl -L https://encore.dev/install.sh | bash
@@ -35,6 +36,7 @@ jobs:
           
           rm -rf infra
           cd app
+          # Create a dummy config just to bypass Encore's build requirement
           cat <<EOF > encore.config.json
           {
             "secrets": {
@@ -45,6 +47,19 @@ jobs:
           
           $HOME/.encore/bin/encore build docker $IMAGE --push --config encore.config.json
 
+      # STEP 2: SCAN IMAGE FOR VULNERABILITIES (QUALITY GATE)
+      - name: Scan Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}'
+          format: 'table'
+          # If a CRITICAL vulnerability is found, pipeline will fail and abort deployment
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL'
+
+      # STEP 3: GET THE EXACT VM INSTANCE NAME FROM MIG
       - name: Get MIG instance
         run: |
           MIG_NAME=$(gcloud compute instance-groups managed list \
@@ -65,6 +80,7 @@ jobs:
 
           echo "INSTANCE_NAME=$INSTANCE" >> $GITHUB_ENV
 
+      # STEP 4: UPLOAD MONITORING STACK CONFIGS
       - name: Upload Monitoring Configs (SCP)
         run: |
           export GCLOUD_SCP_OPTS="--scp-flag=-oStrictHostKeyChecking=no --scp-flag=-oUserKnownHostsFile=/dev/null"
@@ -76,6 +92,7 @@ jobs:
             $GCLOUD_SCP_OPTS \
             --quiet
 
+      # STEP 5: DEPLOY BOTH STACKS (MONITORING & APP) VIA SSH
       - name: Deploy Monitoring Stack & App (SSH)
         run: |
           export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
@@ -91,55 +108,100 @@ jobs:
               
               sudo gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
               
-              echo ' 1. DEPLOYING MONITORING STACK '
-              
+              echo '===================================='
+              echo ' 1. DEPLOYING MONITORING STACK      '
+              echo '===================================='
               sudo mkdir -p /opt/monitoring
               sudo mv /tmp/docker-compose.monitoring.yml /opt/monitoring/
               sudo mv /tmp/prometheus.yml /opt/monitoring/
               cd /opt/monitoring
-              sudo docker network create -d overlay --attachable app_network || true
+              
+              # Ensure the overlay network exists before deploying
+              sudo docker network create -d overlay --attachable app_network 2>/dev/null || true
               sudo docker stack deploy -c docker-compose.monitoring.yml core_stack --with-registry-auth
 
-              echo ' 2. DEPLOYING TASK MANAGEMENT APP '
+              echo '===================================='
+              echo ' 2. DEPLOYING TASK MANAGEMENT APP   '
+              echo '===================================='
 
               IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
               SECRET_NAME=task-env-${{ github.sha }}
               RULE='(Host(\`duongquockiet.id.vn\`) && PathPrefix(\`/v1/\`)) || Path(\`/health\`)'
 
+              # Pre-pull the newly built image to speed up Swarm deployment
               sudo docker pull \$IMAGE
 
+              # Prepare dynamic secrets injected from GitHub Actions Secrets
               echo \"DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@postgres:5432/appdb\" > /tmp/prod.env
               echo \"AUTH_SECRET=${{ secrets.AUTH_SECRET }}\" >> /tmp/prod.env
 
-              sudo docker secret rm \$SECRET_NAME 2>/dev/null || true
-              sudo docker secret create \$SECRET_NAME /tmp/prod.env
+              # Register the new secret to Docker Swarm and clean up the file
+              sudo docker secret create \$SECRET_NAME /tmp/prod.env || true
               rm /tmp/prod.env
 
-              if sudo docker service ls | grep -q task-management; then
-                sudo docker service update \
-                  --image \$IMAGE \
-                  --secret-add source=\$SECRET_NAME,target=/.env \
-                  --label-add \"traefik.enable=true\" \
-                  --label-add \"traefik.docker.network=app_network\" \
-                  --label-add \"traefik.http.routers.app.entrypoints=web\" \
-                  --label-add \"traefik.http.routers.app.rule=\$RULE\" \
-                  --label-add \"traefik.http.services.app.loadbalancer.server.port=8080\" \
-                  --with-registry-auth \
-                  --detach=false \
-                  --force \
-                  task-management
-              else
-                sudo docker service create \
-                  --name task-management \
-                  --replicas 2 \
-                  --network app_network \
-                  --with-registry-auth \
-                  --label traefik.enable=true \
-                  --label traefik.docker.network=app_network \
-                  --label traefik.http.routers.app.entrypoints=web \
-                  --label traefik.http.routers.app.rule=\"\$RULE\" \
-                  --label traefik.http.services.app.loadbalancer.server.port=8080 \
-                  --secret source=\$SECRET_NAME,target=/.env \
-                  \$IMAGE
-              fi
+              # Generate docker-compose.app.yml for Stack Deploy
+              cat << EOF > /tmp/docker-compose.app.yml
+              version: '3.8'
+
+              services:
+                api:
+                  image: \${IMAGE}
+                  
+                  # [REQUIREMENT]: Inject secrets as Environment Variables before starting the app
+                  command: >
+                    /bin/sh -c '
+                      set -a;
+                      . /run/secrets/app_secret;
+                      set +a;
+                      exec node --enable-source-maps /workspace/.encore/build/combined/combined/main.mjs
+                    '
+                  
+                  #  Explicit Healthcheck for Auto-Rollback mechanism
+                  healthcheck:
+                    test: [\"CMD\", \"wget\", \"--no-verbose\", \"--tries=1\", \"--spider\", \"http://localhost:8080/health\"]
+                    interval: 10s
+                    timeout: 5s
+                    retries: 3
+                    start_period: 15s
+                    
+                  networks:
+                    - app_network
+                    
+                  secrets:
+                    - source: app_secret
+                      target: app_secret
+                  
+                  deploy:
+                    replicas: 2
+                    update_config:
+                      parallelism: 1
+                      delay: 15s
+                      # [REQUIREMENT]: If healthcheck fails, Swarm will rollback to the previous working state
+                      failure_action: rollback
+                      monitor: 20s
+                    rollback_config:
+                      parallelism: 1
+                      failure_action: pause
+                    
+                    labels:
+                      - \"traefik.enable=true\"
+                      - \"traefik.docker.network=app_network\"
+                      - \"traefik.http.routers.app.entrypoints=web\"
+                      - \"traefik.http.routers.app.rule=\${RULE}\"
+                      - \"traefik.http.services.app.loadbalancer.server.port=8080\"
+
+              networks:
+                app_network:
+                  external: true
+
+              secrets:
+                app_secret:
+                  external: true
+                  # Maps the dynamic swarm secret to 'app_secret' inside the stack
+                  name: \${SECRET_NAME}
+              EOF
+
+              # Execute the Stack Deploy
+              sudo env IMAGE=\$IMAGE SECRET_NAME=\$SECRET_NAME RULE=\"\$RULE\" \
+                docker stack deploy -c /tmp/docker-compose.app.yml app_stack --with-registry-auth
             "
