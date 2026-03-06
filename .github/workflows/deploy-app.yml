@@ -32,6 +32,7 @@ jobs:
           curl -L https://encore.dev/install.sh | bash
           echo "$HOME/.encore/bin" >> $GITHUB_PATH
 
+      # STEP 1: BUILD IMAGE
       - name: Build & Push Image with Encore
         run: |
           IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
@@ -48,6 +49,18 @@ jobs:
           EOF
 
           encore build docker $IMAGE --push --config encore.config.json
+
+      # STEP 2: SCAN IMAGE (SECURITY GATE FOR VULNERABILITIES)
+      - name: Scan Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}'
+          format: 'table'
+          # Abort deployment if CRITICAL issues are found
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL'
 
       - name: Get MIG instance
         run: |
@@ -69,6 +82,7 @@ jobs:
 
           echo "INSTANCE_NAME=$INSTANCE" >> $GITHUB_ENV
 
+      # STEP 3: DEPLOY SERVICE (WITH SECRETS COMMAND, HEALTHCHECK & ROLLBACK)
       - name: Deploy Service
         run: |
           export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
@@ -81,57 +95,85 @@ jobs:
             --quiet \
             --command="
               set -e
-
               sudo gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
 
               IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
-
               SECRET_NAME=task-env-${{ github.sha }}
-
               RULE='(Host(\`duongquockiet.id.vn\`) && PathPrefix(\`/v1/\`)) || Path(\`/health\`)'
 
-              echo 'Pulling image...'
+              echo '1. Pulling image...'
               sudo docker pull \$IMAGE
 
-              echo 'Creating env file...'
-              echo \"DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@postgres:5432/appdb\" > prod.env
-              echo \"AUTH_SECRET=${{ secrets.AUTH_SECRET }}\" >> prod.env
+              echo '2. Creating dynamic docker secret...'
+              echo \"DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@postgres:5432/appdb\" > /tmp/prod.env
+              echo \"AUTH_SECRET=${{ secrets.AUTH_SECRET }}\" >> /tmp/prod.env
 
-              echo 'Creating docker secret...'
-              sudo docker secret rm \$SECRET_NAME 2>/dev/null || true
-              sudo docker secret create \$SECRET_NAME prod.env
-              rm prod.env
+              sudo docker secret create \$SECRET_NAME /tmp/prod.env || true
+              rm /tmp/prod.env
 
-              if sudo docker service ls | grep -q task-management; then
-                echo 'Updating service...'
+              echo '3. Generating Docker Compose for App...'
+              cat << EOF > /tmp/docker-compose.app.yml
+              version: '3.8'
 
-                sudo docker service update \
-                  --image \$IMAGE \
-                  --secret-add source=\$SECRET_NAME,target=/.env \
-                  --label-add "traefik.enable=true" \
-                  --label-add "traefik.docker.network=app_network" \
-                  --label-add "traefik.http.routers.app.entrypoints=web" \
-                  --label-add "traefik.http.routers.app.rule=\$RULE" \
-                  --label-add "traefik.http.services.app.loadbalancer.server.port=8080" \
-                  --with-registry-auth \
-                  --detach=false \
-                  --force \
-                  task-management
+              services:
+                api:
+                  image: \${IMAGE}
+                  
+                  # [REQUIREMENT JAKE]: Parse external secret and export to env vars before running
+                  command: >
+                    /bin/sh -c '
+                      set -a;
+                      . /run/secrets/app_secret;
+                      set +a;
+                      exec node --enable-source-maps /workspace/.encore/build/combined/combined/main.mjs
+                    '
+                  
+                  # [REQUIREMENT JAKE]: Healthcheck for Rollback mechanism
+                  healthcheck:
+                    test: [\"CMD\", \"wget\", \"--no-verbose\", \"--tries=1\", \"--spider\", \"http://localhost:8080/health\"]
+                    interval: 10s
+                    timeout: 5s
+                    retries: 3
+                    start_period: 15s
+                    
+                  networks:
+                    - app_network
+                  
+                  secrets:
+                    - source: app_secret
+                      target: app_secret
+                  
+                  deploy:
+                    replicas: 2
+                    update_config:
+                      parallelism: 1
+                      delay: 10s
+                      # [REQUIREMENT JAKE]: Auto Rollback on Failure
+                      failure_action: rollback
+                      monitor: 15s
+                    rollback_config:
+                      parallelism: 1
+                      failure_action: pause
+                    
+                    labels:
+                      - \"traefik.enable=true\"
+                      - \"traefik.docker.network=app_network\"
+                      - \"traefik.http.routers.app.entrypoints=web\"
+                      - \"traefik.http.routers.app.rule=\${RULE}\"
+                      - \"traefik.http.services.app.loadbalancer.server.port=8080\"
 
-              else
-                echo 'Creating service...'
+              networks:
+                app_network:
+                  external: true
 
-                sudo docker service create \
-                  --name task-management \
-                  --replicas 2 \
-                  --network app_network \
-                  --with-registry-auth \
-                  --label traefik.enable=true \
-                  --label traefik.docker.network=app_network \
-                  --label traefik.http.routers.app.entrypoints=web \
-                  --label traefik.http.routers.app.rule="\$RULE" \
-                  --label traefik.http.services.app.loadbalancer.server.port=8080 \
-                  --secret source=\$SECRET_NAME,target=/.env \
-                  \$IMAGE
-              fi
+              secrets:
+                app_secret:
+                  # [REQUIREMENT JAKE]: Set external true
+                  external: true
+                  name: \${SECRET_NAME}
+              EOF
+
+              echo '4. Deploying App Stack...'
+              sudo env IMAGE=\$IMAGE SECRET_NAME=\$SECRET_NAME RULE=\"\$RULE\" \
+                docker stack deploy -c /tmp/docker-compose.app.yml task_stack --with-registry-auth
             "
