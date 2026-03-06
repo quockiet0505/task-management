@@ -32,15 +32,20 @@ jobs:
           curl -L https://encore.dev/install.sh | bash
           echo "$HOME/.encore/bin" >> $GITHUB_PATH
 
-      # STEP 1: BUILD IMAGES (Giữ nguyên build Backend + Thêm build Frontend)
-      - name: Build & Push Image with Encore
+      # STEP 1: BUILD IMAGES 
+      - name: Build & Push Images
         run: |
-          IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
+          API_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
           WEB_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:${{ github.sha }}
 
-          # Build Backend
-          rm -rf infra
-        
+          # 1. Build Frontend 
+          echo "Building Frontend with Docker (Bun stage)..."
+          docker build -t $WEB_IMAGE ./web
+          docker push $WEB_IMAGE
+
+          # 2. Build Backend 
+          
+          rm -rf infra web
           cd app
           cat <<EOF > encore.config.json
           {
@@ -49,12 +54,7 @@ jobs:
             }
           }
           EOF
-          encore build docker $IMAGE --push --config encore.config.json
-          cd ..
-
-          # Build Frontend 
-          docker build -t $WEB_IMAGE ./web
-          docker push $WEB_IMAGE
+          encore build docker $API_IMAGE --push --config encore.config.json
 
       # STEP 2: SCAN IMAGES (Scan cả API và Web)
       - name: Scan API Image with Trivy
