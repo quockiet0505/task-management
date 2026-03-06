@@ -15,38 +15,40 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      # Authenticate GitHub Actions to Google Cloud
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: projects/985227244631/locations/global/workloadIdentityPools/github-action-pool/providers/github-provider
           service_account: github-actions-deploy@voltarocks-42-sandbox.iam.gserviceaccount.com
 
+      # Install gcloud CLI
       - name: Setup gcloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker
+      # Configure Docker authentication for Artifact Registry
+      - name: Configure Docker authentication
         run: gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
 
+      # Install Encore CLI
       - name: Install Encore
         run: |
           curl -L https://encore.dev/install.sh | bash
           echo "$HOME/.encore/bin" >> $GITHUB_PATH
 
-      # STEP 1: BUILD IMAGES 
-      - name: Build & Push Images
+      # Build backend and frontend images and push them to Artifact Registry
+      - name: Build and push images
         run: |
           API_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
           WEB_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:${{ github.sha }}
 
-          # 1. Build Frontend 
-          echo "Building Frontend with Docker (Bun stage)..."
+          echo "Building frontend image"
           docker build -t $WEB_IMAGE ./web
           docker push $WEB_IMAGE
 
-          # 2. Build Backend 
-          
-          rm -rf infra web
+          echo "Building backend image"
           cd app
+
           cat <<EOF > encore.config.json
           {
             "secrets": {
@@ -54,32 +56,29 @@ jobs:
             }
           }
           EOF
+
           encore build docker $API_IMAGE --push --config encore.config.json
 
-      # STEP 2: SCAN IMAGES (Scan cả API và Web)
-      - name: Scan API Image with Trivy
+      # Scan API image for critical vulnerabilities
+      - name: Scan API image
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
           format: table
           exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          scanners: 'vuln'
           severity: 'CRITICAL'
           trivyignores: '.trivyignore'
 
-      - name: Scan Web Image with Trivy
+      # Scan Web image for critical vulnerabilities
+      - name: Scan Web image
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:${{ github.sha }}
           format: table
           exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          scanners: 'vuln'
           severity: 'CRITICAL'
-      
+
+      # Retrieve one VM instance from the managed instance group
       - name: Get MIG instance
         run: |
           MIG_NAME=$(gcloud compute instance-groups managed list \
@@ -93,17 +92,25 @@ jobs:
             --zone=asia-southeast1-a \
             --format="value(instance.basename())" | head -n 1)
 
-          if [ -z "$INSTANCE" ]; then
-            echo "No instance found"
-            exit 1
-          fi
-
           echo "INSTANCE_NAME=$INSTANCE" >> $GITHUB_ENV
 
-      # STEP 3: DEPLOY SERVICE
-      - name: Deploy Service
+      # Deploy application to the VM
+      - name: Deploy service
         run: |
           export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
+
+          API_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
+          WEB_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:${{ github.sha }}
+          SECRET_NAME=task-env-${{ github.sha }}
+
+          echo "Copy docker compose file to VM"
+
+          gcloud compute scp ./web/docker-compose.prod.yml ${{ env.INSTANCE_NAME }}:/tmp/docker-compose.app.yml \
+            --zone=asia-southeast1-a \
+            --tunnel-through-iap \
+            $GCLOUD_SSH_OPTS
+
+          echo "Deploy application on VM"
 
           gcloud compute ssh ${{ env.INSTANCE_NAME }} \
             --zone=asia-southeast1-a \
@@ -113,92 +120,23 @@ jobs:
             --quiet \
             --command="
               set -e
+
               sudo gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
 
-              IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
-              WEB_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:${{ github.sha }}
-              SECRET_NAME=task-env-${{ github.sha }}
-              RULE='(Host(\`duongquockiet.id.vn\`) && PathPrefix(\`/v1/\`)) || Path(\`/health\`)'
+              echo 'Pulling images'
+              sudo docker pull $API_IMAGE
+              sudo docker pull $WEB_IMAGE
 
-              echo '1. Pulling images...'
-              sudo docker pull \$IMAGE
-              sudo docker pull \$WEB_IMAGE
-
-              echo '2. Creating dynamic docker secret...'
+              echo 'Creating docker secret'
               echo \"DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@postgres:5432/appdb\" > /tmp/prod.env
               echo \"AUTH_SECRET=${{ secrets.AUTH_SECRET }}\" >> /tmp/prod.env
 
-              sudo docker secret create \$SECRET_NAME /tmp/prod.env || true
+              sudo docker secret rm $SECRET_NAME 2>/dev/null || true
+              sudo docker secret create $SECRET_NAME /tmp/prod.env
+
               rm /tmp/prod.env
 
-              echo '3. Generating Docker Compose for App...'
-              cat << EOF > /tmp/docker-compose.app.yml
-              version: '3.8'
-
-              services:
-                api:
-                  image: \${IMAGE}
-                  command: >
-                    /bin/sh -c '
-                      set -a;
-                      . /run/secrets/app_secret;
-                      set +a;
-                      exec node --enable-source-maps /workspace/.encore/build/combined/combined/main.mjs
-                    '
-                  healthcheck:
-                    test: [\"CMD\", \"wget\", \"--no-verbose\", \"--tries=1\", \"--spider\", \"http://localhost:8080/health\"]
-                    interval: 10s
-                    timeout: 5s
-                    retries: 3
-                    start_period: 15s
-                  networks:
-                    - app_network
-                  secrets:
-                    - source: app_secret
-                      target: app_secret
-                  deploy:
-                    replicas: 2
-                    update_config:
-                      parallelism: 1
-                      delay: 10s
-                      failure_action: rollback
-                      monitor: 15s
-                    rollback_config:
-                      parallelism: 1
-                      failure_action: pause
-                    labels:
-                      - \"traefik.enable=true\"
-                      - \"traefik.docker.network=app_network\"
-                      - \"traefik.http.routers.app.entrypoints=web\"
-                      - \"traefik.http.routers.app.rule=\${RULE}\"
-                      - \"traefik.http.routers.app.priority=100\"
-                      - \"traefik.http.services.app.loadbalancer.server.port=8080\"
-
-                web:
-                  image: \${WEB_IMAGE}
-                  networks:
-                    - app_network
-                  deploy:
-                    replicas: 1
-                    labels:
-                      - \"traefik.enable=true\"
-                      - \"traefik.docker.network=app_network\"
-                      - \"traefik.http.routers.web-ui.entrypoints=web\"
-                      - \"traefik.http.routers.web-ui.rule=Host(\`duongquockiet.id.vn\`)\"
-                      - \"traefik.http.routers.web-ui.priority=10\"
-                      - \"traefik.http.services.web-ui.loadbalancer.server.port=80\"
-
-              networks:
-                app_network:
-                  external: true
-
-              secrets:
-                app_secret:
-                  external: true
-                  name: \${SECRET_NAME}
-              EOF
-
-              echo '4. Deploying App Stack...'
-              sudo env IMAGE=\$IMAGE WEB_IMAGE=\$WEB_IMAGE SECRET_NAME=\$SECRET_NAME RULE=\"\$RULE\" \
+              echo 'Deploying stack'
+              sudo API_IMAGE=$API_IMAGE WEB_IMAGE=$WEB_IMAGE SECRET_NAME=$SECRET_NAME \
                 docker stack deploy -c /tmp/docker-compose.app.yml task_stack --with-registry-auth
             "
