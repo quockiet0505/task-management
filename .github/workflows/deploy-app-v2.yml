@@ -30,6 +30,10 @@ jobs:
       - name: Configure Docker authentication
         run: gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
 
+      # Install Bun runtime
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
+
       # Install Encore CLI
       - name: Install Encore
         run: |
@@ -41,6 +45,14 @@ jobs:
         run: |
           API_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
           WEB_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:${{ github.sha }}
+
+          echo "Installing frontend dependencies"
+          cd web
+          bun install
+          cd ..
+
+          echo "Removing infra folder to avoid Encore module resolution errors"
+          rm -rf infra
 
           echo "Building frontend image"
           docker build -t $WEB_IMAGE ./web
