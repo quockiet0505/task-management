@@ -1,6 +1,6 @@
-import { db } from "../../../db"
-import { users } from "../../../db/schema/users"
-import {organizationMembers} from "../../../db/schema/organization_members"
+import { db } from "../../db"
+import { users } from "../../db/schema/users"
+import {organizationMembers} from "../../db/schema/organization_members"
 import { eq, and } from "drizzle-orm"
 
 type Role = "admin" | "member"

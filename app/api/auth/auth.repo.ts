@@ -1,7 +1,7 @@
 import { db } from "../../db"
-import { users } from "../../../db/schema/users"
-import { organizations } from "../../../db/schema/organizations"
-import { organizationMembers } from "../../../db/schema/organization_members"
+import { users } from "../../db/schema/users"
+import { organizations } from "../../db/schema/organizations"
+import { organizationMembers } from "../../db/schema/organization_members"
 import { eq, and } from "drizzle-orm"
 // Database operations related to authenticated
 

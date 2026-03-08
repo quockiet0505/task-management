@@ -1,5 +1,5 @@
 import { db } from "../../db"
-import { users } from "../../../db/schema/users"
+import { users } from "../../db/schema/users"
 import { eq, and } from "drizzle-orm"
 
 export const UserRepo = {

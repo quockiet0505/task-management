@@ -1,5 +1,5 @@
 import { db } from "../../db"
-import { tasks } from "../../../db/schema/tasks"
+import { tasks } from "../../db/schema/tasks"
 import { eq, and } from "drizzle-orm"
 
 export const TaskRepo = {

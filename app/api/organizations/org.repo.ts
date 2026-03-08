@@ -1,5 +1,5 @@
-import { db } from "../../../db"
-import { organizations } from "../../../db/schema/organizations"
+import { db } from "../../db"
+import { organizations } from "../../db/schema/organizations"
 import { eq, and } from "drizzle-orm"
 
 export const OrganizationRepo ={
