@@ -110,6 +110,7 @@ jobs:
       - name: Deploy service
         run: |
           export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
+          export GCLOUD_SCP_OPTS="--scp-flag=-oStrictHostKeyChecking=no --scp-flag=-oUserKnownHostsFile=/dev/null"
 
           API_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
           WEB_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:${{ github.sha }}
@@ -117,13 +118,14 @@ jobs:
 
           echo "Copy docker compose file to VM"
 
+          # 2.  GCLOUD_SCP_OPTS 
           gcloud compute scp ./web/docker-compose.prod.yml ${{ env.INSTANCE_NAME }}:/tmp/docker-compose.app.yml \
             --zone=asia-southeast1-a \
             --tunnel-through-iap \
-            $GCLOUD_SSH_OPTS
+            $GCLOUD_SCP_OPTS
 
           echo "Deploy application on VM"
-
+          # 3. GCLOUD_SSH_OPTS 
           gcloud compute ssh ${{ env.INSTANCE_NAME }} \
             --zone=asia-southeast1-a \
             --project=voltarocks-42-sandbox \
