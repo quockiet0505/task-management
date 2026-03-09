@@ -155,7 +155,6 @@ jobs:
 
 
 # DEPLOY SWARM
-
       - name: Deploy to Swarm
         run: |
           export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
@@ -180,18 +179,19 @@ jobs:
               sudo docker pull $WEB_IMAGE
 
               echo 'Setting up environment secrets...'
-              sudo bash -c \"echo \\\"DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@core_stack_postgres:5432/appdb\\\" > /tmp/prod.env\"
-              sudo bash -c \"echo \\\"AUTH_SECRET=${{ secrets.AUTH_SECRET }}\\\" >> /tmp/prod.env\"
+
+              echo \"DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@core_stack_postgres:5432/appdb\" | sudo tee /tmp/prod.env > /dev/null
+              echo \"AUTH_SECRET=${{ secrets.AUTH_SECRET }}\" | sudo tee -a /tmp/prod.env > /dev/null
 
               sudo docker secret rm $SECRET_NAME 2>/dev/null || true
               sudo docker secret create $SECRET_NAME /tmp/prod.env
-              rm /tmp/prod.env
+              
+              sudo rm /tmp/prod.env
 
               echo 'Deploying stack...'
               sudo API_IMAGE=$API_IMAGE WEB_IMAGE=$WEB_IMAGE SECRET_NAME=$SECRET_NAME \
               docker stack deploy -c /tmp/docker-compose.app.yml task_stack --with-registry-auth
             "
-
 # HEALTHCHECK
       - name: Healthcheck
         run: |
