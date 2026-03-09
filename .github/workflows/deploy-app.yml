@@ -180,8 +180,8 @@ jobs:
               sudo docker pull $WEB_IMAGE
 
               echo 'Setting up environment secrets...'
-              echo \"DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@core_stack_postgres:5432/appdb\" > /tmp/prod.env
-              echo \"AUTH_SECRET=${{ secrets.AUTH_SECRET }}\" >> /tmp/prod.env
+              sudo bash -c \"echo \\\"DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@core_stack_postgres:5432/appdb\\\" > /tmp/prod.env\"
+              sudo bash -c \"echo \\\"AUTH_SECRET=${{ secrets.AUTH_SECRET }}\\\" >> /tmp/prod.env\"
 
               sudo docker secret rm $SECRET_NAME 2>/dev/null || true
               sudo docker secret create $SECRET_NAME /tmp/prod.env
