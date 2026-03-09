@@ -13,12 +13,12 @@ services:
         exec node --enable-source-maps /workspace/.encore/build/combined/combined/main.mjs
       '
 
-    healthcheck:
-      test: ["CMD-SHELL","curl -f http://localhost:8080/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
+    # healthcheck:
+    #   test: ["CMD-SHELL","curl -f http://localhost:8080/health || exit 1"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 3
+    #   start_period: 15s
 
     networks:
       - app_network
