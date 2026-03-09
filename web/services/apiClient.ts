@@ -21,34 +21,32 @@ export async function apiClient(
 
   try {
     const url = `${API_BASE}${path}`;
-    console.log(`[Fetch] Đang gọi API: ${url}`);
+    console.log(`[Fetch] Calling API: ${url}`);
 
     const res = await fetch(url, {
       ...options,
       headers,
     });
 
-    console.log(`[Fetch] Trạng thái phản hồi (Status): ${res.status}`);
+    console.log(`[Fetch] Response Status: ${res.status}`);
 
-    // 1. Đọc nội dung dưới dạng chuỗi chữ (Text) trước để không bị crash
     const text = await res.text();
-    console.log(`[Fetch] Nội dung thô (Raw text):`, text);
+    console.log(`[Fetch] Raw Content:`, text);
 
-    // 2. Chuyển thành JSON an toàn
     let data = {};
     if (text) {
       try {
         data = JSON.parse(text);
       } catch (parseError) {
-        console.error("Lỗi khi parse JSON:", text);
-        throw new Error("Dữ liệu trả về không phải chuẩn JSON");
+        console.error("JSON Parsing Error:", text);
+        throw new Error("Received data is not a valid JSON format");
       }
     } else {
-      console.warn("CẢNH BÁO: Backend trả về dữ liệu trống rỗng!");
+      console.warn("Backend returned an empty response body!");
     }
 
     if (!res.ok) {
-      throw new Error((data as any)?.message || `Lỗi máy chủ (${res.status})`);
+      throw new Error((data as any)?.message || `Server Error (${res.status})`);
     }
 
     return data;

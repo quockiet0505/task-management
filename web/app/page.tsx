@@ -16,17 +16,17 @@ export default function HomePage() {
   useEffect(() => {
     apiClient("/health")
       .then((res: any) => {
-        console.log("Dữ liệu gốc từ Backend:", res) // Xem trong F12
+        console.log("Raw Backend Data:", res) 
         
         if (res && res.status === "ok") {
           setStatus('ok')
         } else {
           setStatus('error')
-          setErrorMsg(`Dữ liệu thực tế: ${JSON.stringify(res)}`)
+          setErrorMsg(`Actual Data: ${JSON.stringify(res)}`)
         }
       })
       .catch((err: Error) => {
-        console.error("Lỗi Health Check chi tiết:", err.message)
+        console.error("Health Check Detailed Error:", err.message)
         setStatus('error')
         setErrorMsg(err.message)
       })
@@ -54,10 +54,10 @@ export default function HomePage() {
       >
         <Title level={2} style={{ marginBottom: 8 }}> Task Management</Title>
         <Text type="secondary" style={{ fontSize: 16 }}>
-          Hệ thống quản lý công việc Microservices
+          Microservices Task Management System
         </Text>
 
-        {/* Khối hiển thị trạng thái kết nối */}
+        {/* Connection Status Block */}
         <div
           style={{
             margin: "32px 0",
@@ -68,34 +68,36 @@ export default function HomePage() {
           }}
         >
           {status === 'checking' && (
-            <Space className="w-full justify-center" style={{ display: 'flex', flexDirection: 'column' }}>
+            <Space direction="vertical" style={{ width: '100%', justifyContent: 'center' }}>
               <Spin size="large" />
-              <Text>Đang kiểm tra kết nối Backend...</Text>
+              <Text>Checking backend connection...</Text>
             </Space>
           )}
 
           {status === 'ok' && (
-            <Space className="w-full justify-center" style={{ display: 'flex', flexDirection: 'column' }}>
+            <Space direction="vertical" style={{ width: '100%', justifyContent: 'center' }}>
               <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 40 }} />
               <Title level={4} style={{ color: '#52c41a', margin: 0 }}>
-                Kết nối Backend thành công!
+                Backend Connected Successfully!
               </Title>
-              <Text type="secondary">API đang hoạt động ổn định (Status: OK)</Text>
+              <Text type="secondary">API is running smoothly (Status: OK)</Text>
             </Space>
           )}
 
           {status === 'error' && (
-            <Space className="w-full justify-center" style={{ display: 'flex', flexDirection: 'column' }}>
+            <Space direction="vertical" style={{ width: '100%', justifyContent: 'center' }}>
               <CloseCircleOutlined style={{ color: '#ff4d4f', fontSize: 40 }} />
               <Title level={4} style={{ color: '#ff4d4f', margin: 0 }}>
-                Mất kết nối với Backend
+                Connection Failed
               </Title>
-              <Text type="danger">{errorMsg === 'Failed to fetch' ? 'Lỗi CORS hoặc Backend chưa chạy' : errorMsg}</Text>
+              <Text type="danger">
+                {errorMsg === 'Failed to fetch' ? 'CORS issue or Backend is offline' : errorMsg}
+              </Text>
             </Space>
           )}
         </div>
 
-        {/* Các nút điều hướng */}
+        {/* Navigation Buttons */}
         <Space size="middle">
           <Link href="/login">
             <Button 
@@ -103,7 +105,7 @@ export default function HomePage() {
               size="large" 
               disabled={status === 'error'}
             >
-              Đăng nhập ngay
+              Sign In Now
             </Button>
           </Link>
           <Link href="/register">
@@ -111,7 +113,7 @@ export default function HomePage() {
               size="large" 
               disabled={status === 'error'}
             >
-              Tạo tài khoản
+              Create Account
             </Button>
           </Link>
         </Space>

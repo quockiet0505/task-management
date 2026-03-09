@@ -28,13 +28,23 @@ export default function RegisterPage() {
           <Title level={2}>Create Account</Title>
         </div>
 
-        <Form<RegisterFormValues> layout="vertical" size="large" onFinish={onFinish}>
+        <Form<RegisterFormValues> 
+          layout="vertical" size="large" 
+          onFinish={onFinish}
+          autoComplete="off"
+          >
           <Form.Item label="Email" name="email">
-            <Input prefix={<UserOutlined />} />
+            <Input
+              prefix={<UserOutlined />}
+              placeholder="admin@email.com"
+            />
           </Form.Item>
 
           <Form.Item label="Password" name="password">
-            <Input.Password prefix={<LockOutlined />} />
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="Enter your password"
+            />
           </Form.Item>
 
           <Button type="primary" htmlType="submit" block size="large">

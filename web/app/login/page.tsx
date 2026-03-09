@@ -50,6 +50,7 @@ export default function LoginPage() {
           layout="vertical"
           size="large"
           onFinish={onFinish}
+          autoComplete="off"
         >
           <Form.Item
             label="Email"
