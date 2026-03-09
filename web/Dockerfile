@@ -12,6 +12,8 @@ RUN bun run build
 
 FROM node:20-alpine
 
+RUN apk update && apk upgrade --no-cache
+
 WORKDIR /app
 
 ENV NODE_ENV=production
