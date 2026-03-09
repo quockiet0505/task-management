@@ -141,7 +141,7 @@ jobs:
               sudo docker pull $WEB_IMAGE
 
               echo 'Creating docker secret'
-              echo \"DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@postgres:5432/appdb\" > /tmp/prod.env
+              echo "DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@core_stack_postgres:5432/appdb" > /tmp/prod.env
               echo \"AUTH_SECRET=${{ secrets.AUTH_SECRET }}\" >> /tmp/prod.env
 
               sudo docker secret rm $SECRET_NAME 2>/dev/null || true
