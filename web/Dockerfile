@@ -1,25 +1,29 @@
 FROM oven/bun:1-alpine AS builder
-
 WORKDIR /app
 
 COPY package.json bun.lockb* bun.lock* ./
-
-RUN bun install
+RUN bun install --frozen-lockfile
 
 COPY . .
-
 RUN bun run build
 
-FROM node:20-alpine
-
-RUN apk update && apk upgrade --no-cache
-
+FROM node:20-alpine AS runner
 WORKDIR /app
 
-ENV NODE_ENV=production
+RUN apk update && apk upgrade --no-cache && \
+    addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app ./
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+USER nextjs
 
 EXPOSE 3000
 
-CMD ["bun","run","start"]
+CMD ["node", "server.js"]

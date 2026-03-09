@@ -28,7 +28,7 @@ services:
     networks:
       - app_network
     deploy:
-      replicas: 2
+      replicas: 1
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=app_network"
