@@ -1,7 +1,7 @@
 import { api } from "encore.dev/api"
 import { getAuthData } from "~encore/auth"
 import { OrganizationService } from "./org.service"
-import { CreateOrganizationSchema } from "../../../lib/validation/organizations"
+import { CreateOrganizationSchema } from "../../lib/validation/organizations"
 
 interface CreateOrganizationInput {
   name: string;

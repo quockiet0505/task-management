@@ -3,7 +3,7 @@ import { getAuthData } from "~encore/auth"
 import {
      UpdateMeSchema,
      AdminUpdateUserSchema,
-} from "../../../lib/validation/users"
+} from "../../lib/validation/users"
 import { UserService } from "./user.service"
 import { requireRole } from "../../api/auth/authorization.service"
 

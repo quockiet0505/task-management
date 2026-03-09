@@ -1,0 +1,245 @@
+name: CI/CD - Microservices Parallel Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: voltarocks-42-sandbox
+  REGION: asia-southeast1
+  REGISTRY: asia-southeast1-docker.pkg.dev
+  REPO: cloud-engineer-repo
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+
+# BUILD BACKEND
+  build-api:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/985227244631/locations/global/workloadIdentityPools/github-action-pool/providers/github-provider
+          service_account: github-actions-deploy@voltarocks-42-sandbox.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+      - name: Install Encore
+        run: |
+          curl -L https://encore.dev/install.sh | bash
+          echo "$HOME/.encore/bin" >> $GITHUB_PATH
+
+      - name: Setup Docker cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build API image
+        run: |
+          API_IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-management:${{ env.IMAGE_TAG }}
+
+          rm -rf infra
+
+          cd app
+
+          cat <<EOF > encore.config.json
+          { "secrets": { "AUTH_SECRET": "dummy_secret_for_build" } }
+          EOF
+
+          encore build docker $API_IMAGE --config encore.config.json
+
+      - name: Scan API image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-management:${{ env.IMAGE_TAG }}
+          severity: CRITICAL
+          exit-code: '1'
+
+      - name: Push API image
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-management:${{ env.IMAGE_TAG }}
+
+# BUILD FRONTEND
+  build-web:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/985227244631/locations/global/workloadIdentityPools/github-action-pool/providers/github-provider
+          service_account: github-actions-deploy@voltarocks-42-sandbox.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+      - name: Setup Docker cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build Web image
+        run: |
+          WEB_IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-web:${{ env.IMAGE_TAG }}
+
+          rm -rf infra
+
+          cd web
+
+          docker build \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new \
+            -t $WEB_IMAGE .
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Scan Web image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-web:${{ env.IMAGE_TAG }}
+          severity: CRITICAL
+          exit-code: '1'
+
+      - name: Push Web image
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-web:${{ env.IMAGE_TAG }}
+
+# DEPLOY STACK
+  deploy:
+    needs: [build-api, build-web]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/985227244631/locations/global/workloadIdentityPools/github-action-pool/providers/github-provider
+          service_account: github-actions-deploy@voltarocks-42-sandbox.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+# GET INSTANCE
+      - name: Get MIG instance
+        run: |
+          MIG_NAME=$(gcloud compute instance-groups managed list \
+            --project=${{ env.PROJECT_ID }} \
+            --zones=${{ env.REGION }}-a \
+            --filter="name~task-mig-final" \
+            --format="value(name)" | head -n 1)
+
+          INSTANCE=$(gcloud compute instance-groups managed list-instances $MIG_NAME \
+            --project=${{ env.PROJECT_ID }} \
+            --zone=${{ env.REGION }}-a \
+            --format="value(instance.basename())" | head -n 1)
+
+          echo "INSTANCE_NAME=$INSTANCE" >> $GITHUB_ENV
+
+# COPY COMPOSE FILE
+      - name: Copy compose file
+        run: |
+          export GCLOUD_SCP_OPTS="--scp-flag=-oStrictHostKeyChecking=no --scp-flag=-oUserKnownHostsFile=/dev/null"
+
+          gcloud compute scp docker-compose.prod.yml \
+            ${{ env.INSTANCE_NAME }}:/tmp/docker-compose.app.yml \
+            --zone=${{ env.REGION }}-a \
+            --project=${{ env.PROJECT_ID }} \
+            --tunnel-through-iap \
+            $GCLOUD_SCP_OPTS
+
+# DEPLOY
+      - name: Deploy to Swarm
+        run: |
+          export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
+
+          API_IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-management:${{ env.IMAGE_TAG }}
+          WEB_IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-web:${{ env.IMAGE_TAG }}
+
+          SECRET_NAME=task-env-${{ env.IMAGE_TAG }}
+
+          gcloud compute ssh ${{ env.INSTANCE_NAME }} \
+            --zone=${{ env.REGION }}-a \
+            --project=${{ env.PROJECT_ID }} \
+            --tunnel-through-iap \
+            $GCLOUD_SSH_OPTS \
+            --quiet \
+            --command="
+
+            sudo gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+            sudo docker pull $API_IMAGE
+            sudo docker pull $WEB_IMAGE
+
+            echo \"DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@core_stack_postgres:5432/appdb\" > /tmp/prod.env
+            echo \"AUTH_SECRET=${{ secrets.AUTH_SECRET }}\" >> /tmp/prod.env
+
+            sudo docker secret rm $SECRET_NAME 2>/dev/null || true
+            sudo docker secret create $SECRET_NAME /tmp/prod.env
+
+            sudo API_IMAGE=$API_IMAGE WEB_IMAGE=$WEB_IMAGE SECRET_NAME=$SECRET_NAME \
+            docker stack deploy -c /tmp/docker-compose.app.yml task_stack --with-registry-auth
+            "
+
+# HEALTHCHECK
+      - name: Healthcheck
+        id: health
+        run: |
+          for i in {1..6}; do
+            STATUS=$(curl -o /dev/null -s -w "%{http_code}" https://duongquockiet.id.vn/health || echo "000")
+            echo "Attempt $i - Status: $STATUS"
+
+            if [ "$STATUS" = "200" ]; then
+              exit 0
+            fi
+
+            sleep 10
+          done
+
+          exit 1
+
+# ROLLBACK
+      - name: Rollback
+        if: failure()
+        run: |
+          export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
+
+          gcloud compute ssh ${{ env.INSTANCE_NAME }} \
+            --zone=${{ env.REGION }}-a \
+            --project=${{ env.PROJECT_ID }} \
+            --tunnel-through-iap \
+            $GCLOUD_SSH_OPTS \
+            --command="sudo docker service rollback task_stack_api || true"
+
+          gcloud compute ssh ${{ env.INSTANCE_NAME }} \
+            --zone=${{ env.REGION }}-a \
+            --project=${{ env.PROJECT_ID }} \
+            --tunnel-through-iap \
+            $GCLOUD_SSH_OPTS \
+            --command="sudo docker service rollback task_stack_web || true"

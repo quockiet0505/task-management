@@ -4,7 +4,7 @@ import {
   CreateMemberSchema,
   UpdateMemberSchema,
   AddMemberSchema,
-} from "../../../lib/validation/members"
+} from "../../lib/validation/members"
 import { MemberService } from "./member.service"
 import { requireRole} from "../auth/authorization.service"
 import { AuthRepo } from "../auth/auth.repo"

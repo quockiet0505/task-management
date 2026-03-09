@@ -4,7 +4,7 @@ import {
   CreateTaskSchema,
   UpdateTaskSchema,
   ListTaskSchema,
-} from "../../../lib/validation/tasks"
+} from "../../lib/validation/tasks"
 import { TaskService } from "./task.service"
 import type {
   CreateTaskInput,

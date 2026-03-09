@@ -1,6 +1,6 @@
 import { api } from "encore.dev/api";
 import { AuthService } from "./auth.service";
-import { RegisterSchema, LoginSchema } from "../../../lib/validation/auth";
+import { RegisterSchema, LoginSchema } from "../../lib/validation/auth";
 import type { RegisterInput, LoginInput } from "./auth.types";
 
 // register new user
