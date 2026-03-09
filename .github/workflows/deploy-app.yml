@@ -89,7 +89,7 @@ jobs:
 
           cd web
 
-          docker build -t $WEB_IMAGE .
+          docker build --build-arg NEXT_PUBLIC_API_URL=https://duongquockiet.id.vn -t $WEB_IMAGE .
 
       - name: Scan Web image
         uses: aquasecurity/trivy-action@master
@@ -180,10 +180,10 @@ jobs:
 
               echo 'Preparing env secrets...'
 
-              # Xóa file cũ nếu tồn tại
+              # remove
               sudo rm -f /tmp/prod.env
 
-              # Tạo file env
+              # create file env
               echo 'DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@core_stack_postgres:5432/appdb' | sudo tee /tmp/prod.env > /dev/null
               echo 'AUTH_SECRET=${{ secrets.AUTH_SECRET }}' | sudo tee -a /tmp/prod.env > /dev/null
 
@@ -198,7 +198,7 @@ jobs:
               sudo API_IMAGE=$API_IMAGE WEB_IMAGE=$WEB_IMAGE SECRET_NAME=$SECRET_NAME \
               docker stack deploy -c /tmp/docker-compose.app.yml task_stack --with-registry-auth
             "
-            
+
 # HEALTHCHECK
       - name: Healthcheck
         run: |

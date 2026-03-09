@@ -1,23 +1,23 @@
 import { registerGateways, registerHandlers, run, type Handler } from "encore.dev/internal/codegen/appinit";
 
 import { gateway as api_gatewayGW } from "../../../../encore.service";
-import { register as app_registerImpl0 } from "../../../../api/auth/auth.api";
-import { login as app_loginImpl1 } from "../../../../api/auth/auth.api";
-import { health as app_healthImpl2 } from "../../../../api/health/health.api";
-import { listMembersFromOrg as app_listMembersFromOrgImpl3 } from "../../../../api/members/member.api";
-import { updateMemberFromOrg as app_updateMemberFromOrgImpl4 } from "../../../../api/members/member.api";
-import { deleteMemberFromOrg as app_deleteMemberFromOrgImpl5 } from "../../../../api/members/member.api";
-import { addToOrganization as app_addToOrganizationImpl6 } from "../../../../api/members/member.api";
-import { createOrganization as app_createOrganizationImpl7 } from "../../../../api/organizations/org.api";
-import { getOrganizationById as app_getOrganizationByIdImpl8 } from "../../../../api/organizations/org.api";
-import { listTasks as app_listTasksImpl9 } from "../../../../api/tasks/task.api";
-import { getTaskById as app_getTaskByIdImpl10 } from "../../../../api/tasks/task.api";
-import { createTask as app_createTaskImpl11 } from "../../../../api/tasks/task.api";
-import { updateTask as app_updateTaskImpl12 } from "../../../../api/tasks/task.api";
-import { deleteTask as app_deleteTaskImpl13 } from "../../../../api/tasks/task.api";
-import { getMe as app_getMeImpl14 } from "../../../../api/users/user.api";
-import { updateMe as app_updateMeImpl15 } from "../../../../api/users/user.api";
-import { adminUpdateUser as app_adminUpdateUserImpl16 } from "../../../../api/users/user.api";
+import { register as app_registerImpl0 } from "../../../../api\\auth\\auth.api";
+import { login as app_loginImpl1 } from "../../../../api\\auth\\auth.api";
+import { health as app_healthImpl2 } from "../../../../api\\health\\health.api";
+import { listMembersFromOrg as app_listMembersFromOrgImpl3 } from "../../../../api\\members\\member.api";
+import { updateMemberFromOrg as app_updateMemberFromOrgImpl4 } from "../../../../api\\members\\member.api";
+import { deleteMemberFromOrg as app_deleteMemberFromOrgImpl5 } from "../../../../api\\members\\member.api";
+import { addToOrganization as app_addToOrganizationImpl6 } from "../../../../api\\members\\member.api";
+import { createOrganization as app_createOrganizationImpl7 } from "../../../../api\\organizations\\org.api";
+import { getOrganizationById as app_getOrganizationByIdImpl8 } from "../../../../api\\organizations\\org.api";
+import { listTasks as app_listTasksImpl9 } from "../../../../api\\tasks\\task.api";
+import { getTaskById as app_getTaskByIdImpl10 } from "../../../../api\\tasks\\task.api";
+import { createTask as app_createTaskImpl11 } from "../../../../api\\tasks\\task.api";
+import { updateTask as app_updateTaskImpl12 } from "../../../../api\\tasks\\task.api";
+import { deleteTask as app_deleteTaskImpl13 } from "../../../../api\\tasks\\task.api";
+import { getMe as app_getMeImpl14 } from "../../../../api\\users\\user.api";
+import { updateMe as app_updateMeImpl15 } from "../../../../api\\users\\user.api";
+import { adminUpdateUser as app_adminUpdateUserImpl16 } from "../../../../api\\users\\user.api";
 import * as app_service from "../../../../encore.service";
 
 

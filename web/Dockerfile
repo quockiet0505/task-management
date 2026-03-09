@@ -5,6 +5,10 @@ COPY package.json bun.lockb* bun.lock* ./
 RUN bun install --frozen-lockfile
 
 COPY . .
+
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 RUN bun run build
 
 FROM node:20-alpine AS runner

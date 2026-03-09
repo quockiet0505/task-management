@@ -1,10 +1,10 @@
 import { apiCall, streamIn, streamOut, streamInOut } from "encore.dev/internal/codegen/api";
 import { registerTestHandler } from "encore.dev/internal/codegen/appinit";
 
-import * as app_service from "../../../../app\\encore.service";
+import * as app_service from "../../../../encore.service";
 
 export async function register(params, opts) {
-    const handler = (await import("../../../../app\\api\\auth\\auth.api")).register;
+    const handler = (await import("../../../../api\\auth\\auth.api")).register;
     registerTestHandler({
         apiRoute: { service: "app", name: "register", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -15,7 +15,7 @@ export async function register(params, opts) {
 }
 
 export async function login(params, opts) {
-    const handler = (await import("../../../../app\\api\\auth\\auth.api")).login;
+    const handler = (await import("../../../../api\\auth\\auth.api")).login;
     registerTestHandler({
         apiRoute: { service: "app", name: "login", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -26,7 +26,7 @@ export async function login(params, opts) {
 }
 
 export async function health(params, opts) {
-    const handler = (await import("../../../../app\\api\\health\\health.api")).health;
+    const handler = (await import("../../../../api\\health\\health.api")).health;
     registerTestHandler({
         apiRoute: { service: "app", name: "health", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -37,7 +37,7 @@ export async function health(params, opts) {
 }
 
 export async function listMembersFromOrg(params, opts) {
-    const handler = (await import("../../../../app\\api\\members\\member.api")).listMembersFromOrg;
+    const handler = (await import("../../../../api\\members\\member.api")).listMembersFromOrg;
     registerTestHandler({
         apiRoute: { service: "app", name: "listMembersFromOrg", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -48,7 +48,7 @@ export async function listMembersFromOrg(params, opts) {
 }
 
 export async function updateMemberFromOrg(params, opts) {
-    const handler = (await import("../../../../app\\api\\members\\member.api")).updateMemberFromOrg;
+    const handler = (await import("../../../../api\\members\\member.api")).updateMemberFromOrg;
     registerTestHandler({
         apiRoute: { service: "app", name: "updateMemberFromOrg", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -59,7 +59,7 @@ export async function updateMemberFromOrg(params, opts) {
 }
 
 export async function deleteMemberFromOrg(params, opts) {
-    const handler = (await import("../../../../app\\api\\members\\member.api")).deleteMemberFromOrg;
+    const handler = (await import("../../../../api\\members\\member.api")).deleteMemberFromOrg;
     registerTestHandler({
         apiRoute: { service: "app", name: "deleteMemberFromOrg", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -70,7 +70,7 @@ export async function deleteMemberFromOrg(params, opts) {
 }
 
 export async function addToOrganization(params, opts) {
-    const handler = (await import("../../../../app\\api\\members\\member.api")).addToOrganization;
+    const handler = (await import("../../../../api\\members\\member.api")).addToOrganization;
     registerTestHandler({
         apiRoute: { service: "app", name: "addToOrganization", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -81,7 +81,7 @@ export async function addToOrganization(params, opts) {
 }
 
 export async function createOrganization(params, opts) {
-    const handler = (await import("../../../../app\\api\\organizations\\org.api")).createOrganization;
+    const handler = (await import("../../../../api\\organizations\\org.api")).createOrganization;
     registerTestHandler({
         apiRoute: { service: "app", name: "createOrganization", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -92,7 +92,7 @@ export async function createOrganization(params, opts) {
 }
 
 export async function getOrganizationById(params, opts) {
-    const handler = (await import("../../../../app\\api\\organizations\\org.api")).getOrganizationById;
+    const handler = (await import("../../../../api\\organizations\\org.api")).getOrganizationById;
     registerTestHandler({
         apiRoute: { service: "app", name: "getOrganizationById", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -103,7 +103,7 @@ export async function getOrganizationById(params, opts) {
 }
 
 export async function listTasks(params, opts) {
-    const handler = (await import("../../../../app\\api\\tasks\\task.api")).listTasks;
+    const handler = (await import("../../../../api\\tasks\\task.api")).listTasks;
     registerTestHandler({
         apiRoute: { service: "app", name: "listTasks", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -114,7 +114,7 @@ export async function listTasks(params, opts) {
 }
 
 export async function getTaskById(params, opts) {
-    const handler = (await import("../../../../app\\api\\tasks\\task.api")).getTaskById;
+    const handler = (await import("../../../../api\\tasks\\task.api")).getTaskById;
     registerTestHandler({
         apiRoute: { service: "app", name: "getTaskById", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -125,7 +125,7 @@ export async function getTaskById(params, opts) {
 }
 
 export async function createTask(params, opts) {
-    const handler = (await import("../../../../app\\api\\tasks\\task.api")).createTask;
+    const handler = (await import("../../../../api\\tasks\\task.api")).createTask;
     registerTestHandler({
         apiRoute: { service: "app", name: "createTask", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -136,7 +136,7 @@ export async function createTask(params, opts) {
 }
 
 export async function updateTask(params, opts) {
-    const handler = (await import("../../../../app\\api\\tasks\\task.api")).updateTask;
+    const handler = (await import("../../../../api\\tasks\\task.api")).updateTask;
     registerTestHandler({
         apiRoute: { service: "app", name: "updateTask", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -147,7 +147,7 @@ export async function updateTask(params, opts) {
 }
 
 export async function deleteTask(params, opts) {
-    const handler = (await import("../../../../app\\api\\tasks\\task.api")).deleteTask;
+    const handler = (await import("../../../../api\\tasks\\task.api")).deleteTask;
     registerTestHandler({
         apiRoute: { service: "app", name: "deleteTask", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -158,7 +158,7 @@ export async function deleteTask(params, opts) {
 }
 
 export async function getMe(params, opts) {
-    const handler = (await import("../../../../app\\api\\users\\user.api")).getMe;
+    const handler = (await import("../../../../api\\users\\user.api")).getMe;
     registerTestHandler({
         apiRoute: { service: "app", name: "getMe", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -169,7 +169,7 @@ export async function getMe(params, opts) {
 }
 
 export async function updateMe(params, opts) {
-    const handler = (await import("../../../../app\\api\\users\\user.api")).updateMe;
+    const handler = (await import("../../../../api\\users\\user.api")).updateMe;
     registerTestHandler({
         apiRoute: { service: "app", name: "updateMe", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
@@ -180,7 +180,7 @@ export async function updateMe(params, opts) {
 }
 
 export async function adminUpdateUser(params, opts) {
-    const handler = (await import("../../../../app\\api\\users\\user.api")).adminUpdateUser;
+    const handler = (await import("../../../../api\\users\\user.api")).adminUpdateUser;
     registerTestHandler({
         apiRoute: { service: "app", name: "adminUpdateUser", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
