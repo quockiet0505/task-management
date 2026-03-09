@@ -211,3 +211,48 @@ sonner
 docker build -t asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:v1 .
 
 docker push asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:v1
+
+### Test create account
+
+```
+curl -X POST https://duongquockiet.id.vn/v1/auth/register \
+-H "Content-Type: application/json" \
+-d '{
+  "email":"test1@example.com",
+  "password":"123456"
+}'
+
+curl -X POST https://duongquockiet.id.vn/v1/auth/login \
+-H "Content-Type: application/json" \
+-d '{
+  "email":"test1@example.com",
+  "password":"123456"
+}'
+
+curl -X POST https://duongquockiet.id.vn/v1/organizations/create \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer TOKEN" \
+-d '{
+  "name":"DevOps Team"
+}'
+
+curl -X POST https://duongquockiet.id.vn/v1/tasks/create \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer TOKEN" \
+-d '{
+  "title":"First task",
+  "status":"todo",
+  "priority":"high",
+  "organizationID":"ORG_ID"
+}'
+
+curl -X POST https://duongquockiet.id.vn/v1/tasks/create \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer TOKEN" \
+-d '{
+  "title":"First task",
+  "status":"todo",
+  "priority":"high",
+  "organizationID":"ORG_ID"
+}'
+
