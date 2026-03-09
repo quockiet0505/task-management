@@ -91,14 +91,6 @@ jobs:
 
       - run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
 
-      - name: Setup Docker cache
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-
       - name: Build Web image
         run: |
           WEB_IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-web:${{ env.IMAGE_TAG }}
