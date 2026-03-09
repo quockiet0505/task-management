@@ -6,7 +6,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     permissions:
       id-token: write
       contents: read
@@ -15,33 +14,28 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      # Authenticate GitHub Actions to Google Cloud
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: projects/985227244631/locations/global/workloadIdentityPools/github-action-pool/providers/github-provider
           service_account: github-actions-deploy@voltarocks-42-sandbox.iam.gserviceaccount.com
 
-      # Install gcloud CLI
       - name: Setup gcloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      # Configure Docker authentication for Artifact Registry
       - name: Configure Docker authentication
         run: gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
 
-      # Install Bun runtime
       - name: Install Bun
         uses: oven-sh/setup-bun@v1
 
-      # Install Encore CLI
       - name: Install Encore
         run: |
           curl -L https://encore.dev/install.sh | bash
           echo "$HOME/.encore/bin" >> $GITHUB_PATH
 
-      # Build backend and frontend images and push them to Artifact Registry
-      - name: Build and push images
+      # 1. BUILD IMAGES (Không Push)
+      - name: Build Images (Local)
         run: |
           API_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
           WEB_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:${{ github.sha }}
@@ -51,16 +45,14 @@ jobs:
           bun install
           cd ..
 
-          echo "Removing infra folder to avoid Encore module resolution errors"
+          echo "Building frontend image locally"
+          docker build -t $WEB_IMAGE ./web
+
+          echo "Removing infra folder"
           rm -rf infra
 
-          echo "Building frontend image"
-          docker build -t $WEB_IMAGE ./web
-          docker push $WEB_IMAGE
-
-          echo "Building backend image"
+          echo "Building backend image locally"
           cd app
-
           cat <<EOF > encore.config.json
           {
             "secrets": {
@@ -68,10 +60,10 @@ jobs:
             }
           }
           EOF
+          # Bỏ cờ --push để Encore chỉ build image trên máy runner
+          encore build docker $API_IMAGE --config encore.config.json
 
-          encore build docker $API_IMAGE --push --config encore.config.json
-
-      # Scan API image for critical vulnerabilities
+      # 2. SCAN IMAGES
       - name: Scan API image
         uses: aquasecurity/trivy-action@master
         with:
@@ -81,7 +73,6 @@ jobs:
           severity: 'CRITICAL'
           trivyignores: '.trivyignore'
 
-      # Scan Web image for critical vulnerabilities
       - name: Scan Web image
         uses: aquasecurity/trivy-action@master
         with:
@@ -89,8 +80,21 @@ jobs:
           format: table
           exit-code: '1'
           severity: 'CRITICAL'
+          trivyignores: '.trivyignore'
 
-      # Retrieve one VM instance from the managed instance group
+      # 3. PUSH IMAGES 
+      - name: Push Images to Artifact Registry
+        run: |
+          API_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-management:${{ github.sha }}
+          WEB_IMAGE=asia-southeast1-docker.pkg.dev/voltarocks-42-sandbox/cloud-engineer-repo/task-web:${{ github.sha }}
+
+          echo "Pushing frontend image"
+          docker push $WEB_IMAGE
+
+          echo "Pushing backend image"
+          docker push $API_IMAGE
+
+      # 4. GET INSTANCE & DEPLOY
       - name: Get MIG instance
         run: |
           MIG_NAME=$(gcloud compute instance-groups managed list \
@@ -106,7 +110,6 @@ jobs:
 
           echo "INSTANCE_NAME=$INSTANCE" >> $GITHUB_ENV
 
-      # Deploy application to the VM
       - name: Deploy service
         run: |
           export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
@@ -117,15 +120,12 @@ jobs:
           SECRET_NAME=task-env-${{ github.sha }}
 
           echo "Copy docker compose file to VM"
-
-          # 2.  GCLOUD_SCP_OPTS 
           gcloud compute scp ./web/docker-compose.prod.yml ${{ env.INSTANCE_NAME }}:/tmp/docker-compose.app.yml \
             --zone=asia-southeast1-a \
             --tunnel-through-iap \
             $GCLOUD_SCP_OPTS
 
           echo "Deploy application on VM"
-          # 3. GCLOUD_SSH_OPTS 
           gcloud compute ssh ${{ env.INSTANCE_NAME }} \
             --zone=asia-southeast1-a \
             --project=voltarocks-42-sandbox \
@@ -134,7 +134,6 @@ jobs:
             --quiet \
             --command="
               set -e
-
               sudo gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
 
               echo 'Pulling images'
@@ -147,10 +146,55 @@ jobs:
 
               sudo docker secret rm $SECRET_NAME 2>/dev/null || true
               sudo docker secret create $SECRET_NAME /tmp/prod.env
-
               rm /tmp/prod.env
 
               echo 'Deploying stack'
               sudo API_IMAGE=$API_IMAGE WEB_IMAGE=$WEB_IMAGE SECRET_NAME=$SECRET_NAME \
                 docker stack deploy -c /tmp/docker-compose.app.yml task_stack --with-registry-auth
             "
+      # 5. HEALTHCHECK 
+      - name: Verify deployment health
+        id: healthcheck 
+        run: |
+          echo "Waiting for Traefik to route traffic..."
+          
+          for i in {1..6}; do
+            STATUS=$(curl -o /dev/null -s -w "%{http_code}" https://duongquockiet.id.vn/health || echo "000")
+            echo "Attempt $i - Health check status: $STATUS"
+            
+            if [ "$STATUS" = "200" ]; then
+              echo " Deployment is healthy!"
+              exit 0
+            fi
+            
+            echo "Not ready yet. Retrying in 10s..."
+            sleep 10
+          done
+
+          echo " Health check failed after 60 seconds."
+          exit 1
+          
+      # 6. ROLLBACK IF FAILED
+      - name: Rollback deployment if unhealthy
+        if: failure() && steps.healthcheck.outcome == 'failure'
+        run: |
+          export GCLOUD_SSH_OPTS="--ssh-flag=-oStrictHostKeyChecking=no --ssh-flag=-oUserKnownHostsFile=/dev/null"
+
+          echo "Rolling back API service..."
+
+          gcloud compute ssh ${{ env.INSTANCE_NAME }} \
+            --zone=asia-southeast1-a \
+            --project=voltarocks-42-sandbox \
+            --tunnel-through-iap \
+            $GCLOUD_SSH_OPTS \
+            --quiet \
+            --command="sudo docker service rollback task_stack_api || true"
+            
+          echo "Rolling back Web service..."
+          gcloud compute ssh ${{ env.INSTANCE_NAME }} \
+            --zone=asia-southeast1-a \
+            --project=voltarocks-42-sandbox \
+            --tunnel-through-iap \
+            $GCLOUD_SSH_OPTS \
+            --quiet \
+            --command="sudo docker service rollback task_stack_web || true"
