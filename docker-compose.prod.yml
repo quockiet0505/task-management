@@ -18,10 +18,16 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=app_network"
-        - "traefik.http.routers.app.entrypoints=web"
-        - "traefik.http.routers.app.rule=Host(`duongquockiet.id.vn`) && (PathPrefix(`/v1`) || Path(`/health`))"
+
+        # API
+        - "traefik.http.routers.app.rule=Host(`duongquockiet.id.vn`) && PathPrefix(`/v1/`)"
         - "traefik.http.routers.app.priority=100"
         - "traefik.http.services.app.loadbalancer.server.port=8080"
+
+        # Health check
+        - "traefik.http.routers.app-health.rule=Path(`/health`)"
+        - "traefik.http.routers.app-health.priority=200"
+        - "traefik.http.routers.app-health.service=app"
 
   web:
     image: ${WEB_IMAGE}
