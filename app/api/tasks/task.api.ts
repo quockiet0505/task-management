@@ -20,7 +20,7 @@ import { requireRole } from "../../api/auth/authorization.service"
 // - `DELETE /v1/tasks/:id` - Delete task
 
 export const listTasks = api(
-  { method: "POST", path: "/v1/tasks", auth: true },
+  { method: "POST", path: "/v1/tasks", auth: true , expose: true},
   async (body: ListTaskInput & { organizationId: string }) => {
     const input = ListTaskSchema.parse(body)
     const auth = getAuthData()
@@ -32,7 +32,7 @@ export const listTasks = api(
 )
 
 export const getTaskById = api(
-  { method: "GET", path: "/v1/tasks/:id", auth: true },
+  { method: "GET", path: "/v1/tasks/:id", auth: true, expose: true },
   async (params: { id: string; organizationId: string }) => {
     const auth = getAuthData()
     await requireRole(auth.userID, params.organizationId, ["admin", "member"])
@@ -41,7 +41,7 @@ export const getTaskById = api(
 )
 
 export const createTask = api(
-  { method: "POST", path: "/v1/tasks/create", auth: true },
+  { method: "POST", path: "/v1/tasks/create", auth: true , expose: true},
   async (
     body: CreateTaskInput & {
       organizationID: string
@@ -66,7 +66,7 @@ export const createTask = api(
 
 
 export const updateTask = api(
-  { method: "PUT", path: "/v1/tasks/:id", auth: true },
+  { method: "PUT", path: "/v1/tasks/:id", auth: true , expose: true},
   async (params: { id: string } & UpdateTaskInput & { organizationID: string }) => {
     const input = UpdateTaskSchema.parse(params)
     const auth = getAuthData()
@@ -77,7 +77,7 @@ export const updateTask = api(
 )
 
 export const deleteTask = api(
-  { method: "DELETE", path: "/v1/tasks/:id", auth: true },
+  { method: "DELETE", path: "/v1/tasks/:id", auth: true , expose: true},
   async (params: { id: string; organizationID: string }) => {
     const auth = getAuthData()
     await requireRole(auth.userID, params.organizationID, ["admin"])

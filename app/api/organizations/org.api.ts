@@ -17,7 +17,7 @@ export interface ListOrganizationsResponse {
 }
 
 export const createOrganization = api(
-  { method: "POST", path: "/v1/organizations/create", auth: true },
+  { method: "POST", path: "/v1/organizations/create", auth: true, expose: true },
   async (body: CreateOrganizationInput): Promise<{ id: string }> => {
     const input = CreateOrganizationSchema.parse(body)
     const { userID } = getAuthData()
@@ -28,7 +28,7 @@ export const createOrganization = api(
 )
 
 export const getOrganizationById = api(
-  { method: "GET", path: "/v1/organizations/:id", auth: true }, 
+  { method: "GET", path: "/v1/organizations/:id", auth: true, expose: true }, 
   async (params: { id: string }): Promise<OrganizationResponse> => {
     const org = await OrganizationService.getById(params.id)
     return { id: org.id, name: org.name }
@@ -36,7 +36,7 @@ export const getOrganizationById = api(
 )
 
 export const getMyOrganization = api(
-  { method: "GET", path: "/v1/organizations/my", auth: true },
+  { method: "GET", path: "/v1/organizations/my", auth: true , expose: true},
   async (): Promise<OrganizationResponse> => {
     const { userID } = getAuthData()
     const org = await OrganizationService.getMyOrganization(userID)
@@ -45,7 +45,7 @@ export const getMyOrganization = api(
 )
 
 export const listOrganizations = api(
-  { method: "GET", path: "/v1/organizations", auth: true },
+  { method: "GET", path: "/v1/organizations", auth: true , expose: true},
   async (): Promise<ListOrganizationsResponse> => {
     const { userID } = getAuthData()
     const orgs = await OrganizationService.listByUser(userID)

@@ -9,7 +9,7 @@ import { requireRole } from "../../api/auth/authorization.service"
 
 // Get current user 
 export const getMe = api(
-     { method: "GET", path: "/v1/users/me", auth: true },
+     { method: "GET", path: "/v1/users/me", auth: true , expose: true},
      async () => {
           const auth = getAuthData()
           return UserService.getUserById(auth.userID)
@@ -18,7 +18,7 @@ export const getMe = api(
 
 // Update current user details
 export const updateMe = api(
-     { method: "PUT", path:"/v1/users/update/me", auth: true},
+     { method: "PUT", path:"/v1/users/update/me", auth: true, expose: true},
 
      async(body: {
           fullName?: string,
@@ -34,7 +34,7 @@ export const updateMe = api(
 )
 
 export const adminUpdateUser = api(
-     { method: "PUT", path: "/v1/admin/users/:userId", auth: true },
+     { method: "PUT", path: "/v1/admin/users/:userId", auth: true , expose: true},
      async (params: {
        userId: string
        fullName?: string

@@ -13,7 +13,7 @@ type Role = "admin" | "member"
 
 // list member Organization
 export const listMembersFromOrg = api(
-     {method: "POST", path:"/v1/organization/:organizationId/members", auth:true},
+     {method: "POST", path:"/v1/organization/:organizationId/members", auth:true, expose: true},
      async(params: {organizationId: string}) =>{
           const auth = getAuthData()
           
@@ -31,7 +31,7 @@ export const listMembersFromOrg = api(
 // update member role in organization
 
 export const updateMemberFromOrg = api(
-     {method: "PUT", path:"/v1/organization/:organizationId/members/update", auth:true},
+     {method: "PUT", path:"/v1/organization/:organizationId/members/update", auth:true, expose: true},
      async(params: {organizationId: string} & {userId: string, role: Role}) =>{
           const auth = getAuthData()
           
@@ -52,7 +52,7 @@ export const updateMemberFromOrg = api(
 // delete member from organization
 
 export const deleteMemberFromOrg = api(
-     {method: "DELETE", path:"/v1/organization/:organizationId/members/delete", auth:true},
+     {method: "DELETE", path:"/v1/organization/:organizationId/members/delete", auth:true, expose: true},
      async(params: {organizationId: string} & {userId: string}) =>{
           const auth = getAuthData()
           
@@ -78,7 +78,7 @@ type AddMemberInput = {
 
 // Admin-only
 export const addToOrganization = api(
-  { method: "POST", path: "/v1/organizations/members/add", auth: true },
+  { method: "POST", path: "/v1/organizations/members/add", auth: true, expose: true },
   async (body: AddMemberInput): Promise<void> => {
     const input = AddMemberSchema.parse(body)
     const { userID } = getAuthData()
