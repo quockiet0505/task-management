@@ -1,57 +1,30 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || ""
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
-
-console.log("DEBUG: API_BASE ->", API_BASE);
-
-export async function apiClient(
+export async function apiClient<T>(
   path: string,
   options: RequestInit = {}
-) {
+): Promise<T> {
   const token =
     typeof window !== "undefined"
       ? localStorage.getItem("token")
-      : null;
+      : null
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
-  };
-
-  try {
-    const url = `${API_BASE}${path}`;
-    console.log(`[Fetch] Calling API: ${url}`);
-
-    const res = await fetch(url, {
-      ...options,
-      headers,
-    });
-
-    console.log(`[Fetch] Response Status: ${res.status}`);
-
-    const text = await res.text();
-    console.log(`[Fetch] Raw Content:`, text);
-
-    let data = {};
-    if (text) {
-      try {
-        data = JSON.parse(text);
-      } catch (parseError) {
-        console.error("JSON Parsing Error:", text);
-        throw new Error("Received data is not a valid JSON format");
-      }
-    } else {
-      console.warn("Backend returned an empty response body!");
-    }
-
-    if (!res.ok) {
-      throw new Error((data as any)?.message || `Server Error (${res.status})`);
-    }
-
-    return data;
-  } catch (error: any) {
-    console.error(`[API Error] ${path}:`, error.message);
-    throw error;
   }
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
+    credentials: "include",
+  })
+
+  if (!res.ok) {
+    throw new Error(`Server error (${res.status})`)
+  }
+
+  const data: T = await res.json()
+  return data
 }

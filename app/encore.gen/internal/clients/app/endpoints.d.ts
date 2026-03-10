@@ -41,6 +41,14 @@ import { getOrganizationById as getOrganizationById_handler } from "../../../../
 declare const getOrganizationById: WithCallOpts<typeof getOrganizationById_handler>;
 export { getOrganizationById };
 
+import { getMyOrganization as getMyOrganization_handler } from "../../../../api\\organizations\\org.api.js";
+declare const getMyOrganization: WithCallOpts<typeof getMyOrganization_handler>;
+export { getMyOrganization };
+
+import { listOrganizations as listOrganizations_handler } from "../../../../api\\organizations\\org.api.js";
+declare const listOrganizations: WithCallOpts<typeof listOrganizations_handler>;
+export { listOrganizations };
+
 import { listTasks as listTasks_handler } from "../../../../api\\tasks\\task.api.js";
 declare const listTasks: WithCallOpts<typeof listTasks_handler>;
 export { listTasks };

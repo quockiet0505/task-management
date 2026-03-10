@@ -96,10 +96,32 @@ export async function getOrganizationById(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "getOrganizationById", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":false,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "getOrganizationById", params, opts);
+}
+
+export async function getMyOrganization(params, opts) {
+    const handler = (await import("../../../../api\\organizations\\org.api")).getMyOrganization;
+    registerTestHandler({
+        apiRoute: { service: "app", name: "getMyOrganization", raw: false, handler, streamingRequest: false, streamingResponse: false },
+        middlewares: app_service.default.cfg.middlewares || [],
+        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+    });
+
+    return apiCall("app", "getMyOrganization", params, opts);
+}
+
+export async function listOrganizations(params, opts) {
+    const handler = (await import("../../../../api\\organizations\\org.api")).listOrganizations;
+    registerTestHandler({
+        apiRoute: { service: "app", name: "listOrganizations", raw: false, handler, streamingRequest: false, streamingResponse: false },
+        middlewares: app_service.default.cfg.middlewares || [],
+        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+    });
+
+    return apiCall("app", "listOrganizations", params, opts);
 }
 
 export async function listTasks(params, opts) {

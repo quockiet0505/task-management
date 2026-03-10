@@ -7,46 +7,43 @@ import Link from "next/link"
 import AuthLayout from "@/components/layout/AuthLayout"
 import { useAuth } from "@/context/AuthContext"
 
-const { Title, Text } = Typography
+import { loginUser } from "@/services/authService"
+import { LoginRequest } from "@/types/auth"
 
-interface LoginFormValues {
-  email: string
-  password: string
-}
+const { Title, Text } = Typography
 
 export default function LoginPage() {
   const router = useRouter()
   const { login } = useAuth()
 
-  const onFinish = (values: LoginFormValues) => {
-    login({
-      id: "1",
-      email: values.email,
-    })
+  const onFinish = async (values: LoginRequest) => {
+    try {
+      const res = await loginUser(values)
 
-    router.push("/dashboard/tasks")
+      login({
+        id: res.userId,
+        email: values.email,
+      })
+
+      localStorage.setItem("token", res.token)
+
+      router.push("/dashboard/tasks")
+    } catch (err) {
+      console.error("Login failed", err)
+    }
   }
 
   return (
     <AuthLayout>
-      <Card
-        style={{
-          width: 420,
-          boxShadow: "0 8px 30px rgba(0,0,0,0.1)",
-          borderRadius: 10,
-        }}
-      >
+      <Card style={{ width: 420, boxShadow: "0 8px 30px rgba(0,0,0,0.1)", borderRadius: 10 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <Title level={2} style={{ marginBottom: 0 }}>
             Task Manager
           </Title>
-
-          <Text type="secondary">
-            Sign in to manage your tasks
-          </Text>
+          <Text type="secondary">Sign in to manage your tasks</Text>
         </div>
 
-        <Form<LoginFormValues>
+        <Form<LoginRequest>
           layout="vertical"
           size="large"
           onFinish={onFinish}
@@ -65,25 +62,16 @@ export default function LoginPage() {
             name="password"
             rules={[{ required: true, message: "Please enter password" }]}
           >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="Password"
-            />
+            <Input.Password prefix={<LockOutlined />} placeholder="Password" />
           </Form.Item>
 
           <Button type="primary" htmlType="submit" block size="large">
             Login
           </Button>
 
-          <div
-            style={{
-              marginTop: 16,
-              textAlign: "center",
-            }}
-          >
+          <div style={{ marginTop: 16, textAlign: "center" }}>
             <Text type="secondary">
-              Don&apos;t have an account?{" "}
-              <Link href="/register">Register</Link>
+              Don&apos;t have an account? <Link href="/register">Register</Link>
             </Text>
           </div>
         </Form>

@@ -44,9 +44,9 @@ export default function Sidebar() {
           label: "Members",
         },
         {
-          key: "/org/create",
+          key: "/org",
           icon: <BankOutlined />,
-          label: "Create Org",
+          label: "Organization",
         },
         {
           key: "/settings",

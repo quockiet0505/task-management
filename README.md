@@ -256,3 +256,10 @@ curl -X POST https://duongquockiet.id.vn/v1/tasks/create \
   "organizationID":"ORG_ID"
 }'
 
+docker run -d \
+  --name postgres-dev \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=adminpassword \
+  -e POSTGRES_DB=appdb \
+  -p 5432:5432 \
+  postgres:16

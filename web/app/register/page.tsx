@@ -5,20 +5,24 @@ import { UserOutlined, LockOutlined } from "@ant-design/icons"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import AuthLayout from "@/components/layout/AuthLayout"
+import { RegisterRequest } from "@/types/auth"
+import { registerUser } from "@/services/authService"
 
 const { Title, Text } = Typography
-
-interface RegisterFormValues {
-  email: string
-  password: string
-}
 
 export default function RegisterPage() {
   const router = useRouter()
 
-  const onFinish = (values: RegisterFormValues) => {
-    console.log(values)
-    router.push("/login")
+  const onFinish = async (values: RegisterRequest) => {
+    try {
+      const res = await registerUser(values)
+  
+      console.log("Register success:", res)
+  
+      router.push("/login")
+    } catch (err) {
+      console.error("Register failed", err)
+    }
   }
 
   return (
@@ -28,7 +32,7 @@ export default function RegisterPage() {
           <Title level={2}>Create Account</Title>
         </div>
 
-        <Form<RegisterFormValues> 
+        <Form<RegisterRequest> 
           layout="vertical" size="large" 
           onFinish={onFinish}
           autoComplete="off"

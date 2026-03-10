@@ -12,14 +12,16 @@ import { deleteMemberFromOrg as deleteMemberFromOrgImpl5 } from "../../../../../
 import { addToOrganization as addToOrganizationImpl6 } from "../../../../../api\\members\\member.api";
 import { createOrganization as createOrganizationImpl7 } from "../../../../../api\\organizations\\org.api";
 import { getOrganizationById as getOrganizationByIdImpl8 } from "../../../../../api\\organizations\\org.api";
-import { listTasks as listTasksImpl9 } from "../../../../../api\\tasks\\task.api";
-import { getTaskById as getTaskByIdImpl10 } from "../../../../../api\\tasks\\task.api";
-import { createTask as createTaskImpl11 } from "../../../../../api\\tasks\\task.api";
-import { updateTask as updateTaskImpl12 } from "../../../../../api\\tasks\\task.api";
-import { deleteTask as deleteTaskImpl13 } from "../../../../../api\\tasks\\task.api";
-import { getMe as getMeImpl14 } from "../../../../../api\\users\\user.api";
-import { updateMe as updateMeImpl15 } from "../../../../../api\\users\\user.api";
-import { adminUpdateUser as adminUpdateUserImpl16 } from "../../../../../api\\users\\user.api";
+import { getMyOrganization as getMyOrganizationImpl9 } from "../../../../../api\\organizations\\org.api";
+import { listOrganizations as listOrganizationsImpl10 } from "../../../../../api\\organizations\\org.api";
+import { listTasks as listTasksImpl11 } from "../../../../../api\\tasks\\task.api";
+import { getTaskById as getTaskByIdImpl12 } from "../../../../../api\\tasks\\task.api";
+import { createTask as createTaskImpl13 } from "../../../../../api\\tasks\\task.api";
+import { updateTask as updateTaskImpl14 } from "../../../../../api\\tasks\\task.api";
+import { deleteTask as deleteTaskImpl15 } from "../../../../../api\\tasks\\task.api";
+import { getMe as getMeImpl16 } from "../../../../../api\\users\\user.api";
+import { updateMe as updateMeImpl17 } from "../../../../../api\\users\\user.api";
+import { adminUpdateUser as adminUpdateUserImpl18 } from "../../../../../api\\users\\user.api";
 import * as app_service from "../../../../../encore.service";
 
 const handlers: Handler[] = [
@@ -128,14 +130,38 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":false,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        middlewares: app_service.default.cfg.middlewares || [],
+    },
+    {
+        apiRoute: {
+            service:           "app",
+            name:              "getMyOrganization",
+            handler:           getMyOrganizationImpl9,
+            raw:               false,
+            streamingRequest:  false,
+            streamingResponse: false,
+        },
+        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        middlewares: app_service.default.cfg.middlewares || [],
+    },
+    {
+        apiRoute: {
+            service:           "app",
+            name:              "listOrganizations",
+            handler:           listOrganizationsImpl10,
+            raw:               false,
+            streamingRequest:  false,
+            streamingResponse: false,
+        },
+        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
         apiRoute: {
             service:           "app",
             name:              "listTasks",
-            handler:           listTasksImpl9,
+            handler:           listTasksImpl11,
             raw:               false,
             streamingRequest:  false,
             streamingResponse: false,
@@ -147,7 +173,7 @@ const handlers: Handler[] = [
         apiRoute: {
             service:           "app",
             name:              "getTaskById",
-            handler:           getTaskByIdImpl10,
+            handler:           getTaskByIdImpl12,
             raw:               false,
             streamingRequest:  false,
             streamingResponse: false,
@@ -159,7 +185,7 @@ const handlers: Handler[] = [
         apiRoute: {
             service:           "app",
             name:              "createTask",
-            handler:           createTaskImpl11,
+            handler:           createTaskImpl13,
             raw:               false,
             streamingRequest:  false,
             streamingResponse: false,
@@ -171,7 +197,7 @@ const handlers: Handler[] = [
         apiRoute: {
             service:           "app",
             name:              "updateTask",
-            handler:           updateTaskImpl12,
+            handler:           updateTaskImpl14,
             raw:               false,
             streamingRequest:  false,
             streamingResponse: false,
@@ -183,7 +209,7 @@ const handlers: Handler[] = [
         apiRoute: {
             service:           "app",
             name:              "deleteTask",
-            handler:           deleteTaskImpl13,
+            handler:           deleteTaskImpl15,
             raw:               false,
             streamingRequest:  false,
             streamingResponse: false,
@@ -195,7 +221,7 @@ const handlers: Handler[] = [
         apiRoute: {
             service:           "app",
             name:              "getMe",
-            handler:           getMeImpl14,
+            handler:           getMeImpl16,
             raw:               false,
             streamingRequest:  false,
             streamingResponse: false,
@@ -207,7 +233,7 @@ const handlers: Handler[] = [
         apiRoute: {
             service:           "app",
             name:              "updateMe",
-            handler:           updateMeImpl15,
+            handler:           updateMeImpl17,
             raw:               false,
             streamingRequest:  false,
             streamingResponse: false,
@@ -219,7 +245,7 @@ const handlers: Handler[] = [
         apiRoute: {
             service:           "app",
             name:              "adminUpdateUser",
-            handler:           adminUpdateUserImpl16,
+            handler:           adminUpdateUserImpl18,
             raw:               false,
             streamingRequest:  false,
             streamingResponse: false,

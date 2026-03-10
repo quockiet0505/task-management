@@ -68,6 +68,22 @@ export async function getOrganizationById(params, opts) {
 
     return apiCall("app", "getOrganizationById", params, opts);
 }
+export async function getMyOrganization(opts) {
+    const params = undefined;
+    if (typeof ENCORE_DROP_TESTS === "undefined" && process.env.NODE_ENV === "test") {
+        return TEST_ENDPOINTS.getMyOrganization(params, opts);
+    }
+
+    return apiCall("app", "getMyOrganization", params, opts);
+}
+export async function listOrganizations(opts) {
+    const params = undefined;
+    if (typeof ENCORE_DROP_TESTS === "undefined" && process.env.NODE_ENV === "test") {
+        return TEST_ENDPOINTS.listOrganizations(params, opts);
+    }
+
+    return apiCall("app", "listOrganizations", params, opts);
+}
 export async function listTasks(params, opts) {
     if (typeof ENCORE_DROP_TESTS === "undefined" && process.env.NODE_ENV === "test") {
         return TEST_ENDPOINTS.listTasks(params, opts);

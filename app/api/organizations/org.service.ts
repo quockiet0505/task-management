@@ -23,4 +23,22 @@ export const OrganizationService = {
     }
     return org
   },
+
+  async getMyOrganization(userId: string) {
+    const org = await OrganizationRepo.getByUserId(userId)
+  
+    if (!org) {
+      throw new APIError(
+        ErrCode.NotFound,
+        "User does not belong to any organization"
+      )
+    }
+  
+    return org
+  },
+
+  async listByUser(userId: string) {
+    return OrganizationRepo.listByUser(userId)
+  }
+  
 }
