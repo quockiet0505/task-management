@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { Typography, Modal } from "antd"
@@ -22,18 +23,29 @@ export default function TasksPage() {
   const [orgs, setOrgs] = useState<Organization[]>([])
 
   const loadTasks = async (orgId: string) => {
-    const data = await listTasks(orgId)
-    setTasks(data)
+    try {
+      const response = await listTasks(orgId)
+      const taskArray = (response as any).tasks || response || []
+      setTasks(taskArray)
+    } catch (error) {
+      console.error("Load tasks failed", error)
+      setTasks([]) 
+    }
   }
 
   useEffect(() => {
     const init = async () => {
-      const orgs = await listOrganizations()
+      try {
+        const response = await listOrganizations()
+        const orgArray = (response as any).organizations || response || []
+        
+        setOrgs(orgArray)
 
-      setOrgs(orgs)
-
-      if (orgs.length > 0) {
-        await loadTasks(orgs[0].id)
+        if (orgArray.length > 0) {
+          await loadTasks(orgArray[0].id)
+        }
+      } catch (error) {
+        console.error("Load orgs failed", error)
       }
     }
 
@@ -46,11 +58,10 @@ export default function TasksPage() {
         title: values.title,
         status: values.status,
         priority: values.priority ?? "medium",
-        organizationID: values.organizationId, // ⭐ sửa
+        organizationID: values.organizationId, 
       })
 
       await loadTasks(values.organizationId)
-
       setOpen(false)
     } catch (err) {
       console.error("Create task failed", err)

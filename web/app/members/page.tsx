@@ -44,7 +44,7 @@ export default function MembersPage() {
     try {
       await addMember({
         organizationId: values.organizationId,
-        userId: values.userEmail, 
+        email: values.userEmail,
         role: values.role,
       })
   

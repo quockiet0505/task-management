@@ -71,33 +71,29 @@ export const deleteMemberFromOrg = api(
 )
 
 type AddMemberInput = {
-  organizationId: string;
-  userId: string;
-  role: "admin" | "member";
+     organizationId: string;
+     email: string;
+     role: "admin" | "member";
 }
 
 // Admin-only
 export const addToOrganization = api(
-  { method: "POST", path: "/v1/organizations/members/add", auth: true, expose: true },
-  async (body: AddMemberInput): Promise<void> => {
-    const input = AddMemberSchema.parse(body)
-    const { userID } = getAuthData()
-
-    // Only org admins
-    await requireRole(userID, input.organizationId, ["admin"])
-
-    // Ensure target user exists
-    const target = await AuthRepo.findUserById(input.userId)
-    if (!target) {
-      throw new APIError(ErrCode.NotFound, "User to add not found")
-    }
-
-    // Add membership
-    await AuthRepo.addMember({
-      userId: input.userId,
-      organizationId: input.organizationId,
-      role: input.role,
-    })
-  }
-)
-
+     { method: "POST", path: "/v1/organizations/members/add", auth: true, expose: true },
+     async (body: AddMemberInput): Promise<void> => {
+       const { userID } = getAuthData()
+   
+       await requireRole(userID, body.organizationId, ["admin"])
+   
+       const target = await AuthRepo.findUserByEmail(body.email)
+   
+       if (!target) {
+         throw new APIError(ErrCode.NotFound, "User to add not found")
+       }
+   
+       await AuthRepo.addMember({
+         userId: target.id,
+         organizationId: body.organizationId,
+         role: body.role,
+       })
+     }
+   )

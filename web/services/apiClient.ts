@@ -33,6 +33,7 @@ export async function apiClient<T>(
   try {
     const data: T = JSON.parse(text)
     return data
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     throw new Error("Invalid JSON response from server")
   }

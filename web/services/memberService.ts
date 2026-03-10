@@ -12,7 +12,7 @@ export const listMembers = (organizationId: string) => {
 
 export const addMember = (data: {
   organizationId: string
-  userId: string
+  email: string
   role: Role
 }) => {
   return apiClient<void>(
