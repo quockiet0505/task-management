@@ -29,7 +29,7 @@ export default function LoginPage() {
       )
 
       message.success("Logged in successfully")
-      router.push("/tasks")
+      router.push("/dashboard/tasks")
     } catch (error: unknown) {
       const err = error as Error
       console.error("Login failed:", err.message)
