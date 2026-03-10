@@ -263,3 +263,4 @@ docker run -d \
   -e POSTGRES_DB=appdb \
   -p 5432:5432 \
   postgres:16
+  ```
