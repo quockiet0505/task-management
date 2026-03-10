@@ -18,13 +18,22 @@ export async function apiClient<T>(
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
-    credentials: "include",
+    credentials: "include", 
   })
 
   if (!res.ok) {
     throw new Error(`Server error (${res.status})`)
   }
 
-  const data: T = await res.json()
-  return data
+  const text = await res.text()
+  if (!text) {
+    return {} as T
+  }
+
+  try {
+    const data: T = JSON.parse(text)
+    return data
+  } catch (error) {
+    throw new Error("Invalid JSON response from server")
+  }
 }

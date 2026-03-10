@@ -1,6 +1,6 @@
 "use client"
 
-import { Form, Input, Button, Card, Typography } from "antd"
+import { Form, Input, Button, Card, Typography, message } from "antd"
 import { UserOutlined, LockOutlined } from "@ant-design/icons"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -20,16 +20,20 @@ export default function LoginPage() {
     try {
       const res = await loginUser(values)
 
-      login({
-        id: res.userId,
-        email: values.email,
-      })
+      login(
+        {
+          id: res.userId,
+          email: values.email,
+        },
+        res.token
+      )
 
-      localStorage.setItem("token", res.token)
-
-      router.push("/dashboard/tasks")
-    } catch (err) {
-      console.error("Login failed", err)
+      message.success("Logged in successfully")
+      router.push("/tasks")
+    } catch (error: unknown) {
+      const err = error as Error
+      console.error("Login failed:", err.message)
+      message.error("Login failed. Please check your credentials.")
     }
   }
 
@@ -52,7 +56,7 @@ export default function LoginPage() {
           <Form.Item
             label="Email"
             name="email"
-            rules={[{ required: true, message: "Please enter email" }]}
+            rules={[{ required: true, message: "Please enter your email" }]}
           >
             <Input prefix={<UserOutlined />} placeholder="admin@email.com" />
           </Form.Item>
@@ -60,7 +64,7 @@ export default function LoginPage() {
           <Form.Item
             label="Password"
             name="password"
-            rules={[{ required: true, message: "Please enter password" }]}
+            rules={[{ required: true, message: "Please enter your password" }]}
           >
             <Input.Password prefix={<LockOutlined />} placeholder="Password" />
           </Form.Item>
