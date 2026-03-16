@@ -10,77 +10,88 @@ import type {
   CreateTaskInput,
   UpdateTaskInput,
   ListTaskInput,
+  Task,
+  ListTasksResponse,
+  GetTaskResponse,
+  CreateTaskResponse,
+  UpdateTaskResponse,
+  DeleteTaskResponse,
 } from "./task.types"
 import { requireRole } from "../../api/auth/authorization.service"
 
-// - `POST /v1/tasks` - List tasks (with filters)
-// - `GET /v1/tasks/:id` - Get task details
-// - `POST /v1/tasks/create` - Create task
-// - `PUT /v1/tasks/:id` - Update task
-// - `DELETE /v1/tasks/:id` - Delete task
-
 export const listTasks = api(
-  { method: "POST", path: "/v1/tasks", auth: true , expose: true},
-  async (body: ListTaskInput & { organizationId: string }) => {
+  { method: "POST", path: "/v1/tasks", auth: true, expose: true },
+  async (body: ListTaskInput & { organizationId: string }): Promise<ListTasksResponse> => {
     const input = ListTaskSchema.parse(body)
     const auth = getAuthData()
 
     await requireRole(auth.userID, body.organizationId, ["admin", "member"])
 
-    return TaskService.list(input, body.organizationId)
+    const tasks = await TaskService.list(input, body.organizationId)
+
+    return { tasks: tasks as Task[] }
   }
 )
 
 export const getTaskById = api(
   { method: "GET", path: "/v1/tasks/:id", auth: true, expose: true },
-  async (params: { id: string; organizationId: string }) => {
+  async (params: { id: string; organizationId: string }): Promise<GetTaskResponse> => {
     const auth = getAuthData()
     await requireRole(auth.userID, params.organizationId, ["admin", "member"])
-    return TaskService.get(params.id, params.organizationId)
+
+    const task = await TaskService.get(params.id, params.organizationId)
+
+    return { task: task as Task }
   }
 )
 
 export const createTask = api(
-  { method: "POST", path: "/v1/tasks/create", auth: true , expose: true},
+  { method: "POST", path: "/v1/tasks/create", auth: true, expose: true },
   async (
     body: CreateTaskInput & {
-      organizationID: string
+      organizationId: string
       assignedTo?: string
     }
-  ) => {
+  ): Promise<CreateTaskResponse> => {
     const input = CreateTaskSchema.parse(body)
     const auth = getAuthData()
 
-    await requireRole(auth.userID, body.organizationID, ["admin"])
+    await requireRole(auth.userID, body.organizationId, ["admin"])
 
-    return TaskService.create(
+    const task = await TaskService.create(
       {
         ...input,
-        assignedBy: auth.userID,      
+        assignedBy: auth.userID,
         assignedTo: body.assignedTo,
       },
-      body.organizationID
+      body.organizationId
     )
+
+    return { task: task as Task }
   }
 )
 
-
 export const updateTask = api(
-  { method: "PUT", path: "/v1/tasks/:id", auth: true , expose: true},
-  async (params: { id: string } & UpdateTaskInput & { organizationID: string }) => {
+  { method: "PUT", path: "/v1/tasks/:id", auth: true, expose: true },
+  async (params: { id: string } & UpdateTaskInput & { organizationId: string }): Promise<UpdateTaskResponse> => {
     const input = UpdateTaskSchema.parse(params)
     const auth = getAuthData()
-    await requireRole(auth.userID, params.organizationID, ["admin", "member"])
+    await requireRole(auth.userID, params.organizationId, ["admin", "member"])
 
-    return TaskService.update(params.id, input, params.organizationID)
+    const task = await TaskService.update(params.id, input, params.organizationId)
+
+    return { task: task as Task }
   }
 )
 
 export const deleteTask = api(
-  { method: "DELETE", path: "/v1/tasks/:id", auth: true , expose: true},
-  async (params: { id: string; organizationID: string }) => {
+  { method: "DELETE", path: "/v1/tasks/:id", auth: true, expose: true },
+  async (params: { id: string; organizationId: string }): Promise<DeleteTaskResponse> => {
     const auth = getAuthData()
-    await requireRole(auth.userID, params.organizationID, ["admin"])
-    return TaskService.delete(params.id, params.organizationID)
+    await requireRole(auth.userID, params.organizationId, ["admin"])
+
+    await TaskService.delete(params.id, params.organizationId)
+
+    return { success: true }
   }
 )

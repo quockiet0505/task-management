@@ -1,37 +1,36 @@
 "use client"
 
-import { Typography, Card, Descriptions, Button } from "antd"
+import { Typography } from "antd"
+import { useState } from "react"
 import DashboardLayout from "@/components/layout/DashboardLayout"
 import { useAuth } from "@/context/AuthContext"
+
+import ProfileList from "@/components/settings/ProfileList"
+import EditProfileDialog from "@/components/settings/EditProfileDialog"
 
 const { Title } = Typography
 
 export default function SettingsPage() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
+  const [open, setOpen] = useState(false)
 
   return (
     <DashboardLayout>
       <Title level={3}>Settings</Title>
 
-      <Card style={{ maxWidth: 600 }}>
-        <Descriptions column={1} bordered>
-          <Descriptions.Item label="User ID">
-            {user?.id}
-          </Descriptions.Item>
+      <ProfileList
+        user={user}
+        onEdit={() => setOpen(true)}
+      />
 
-          <Descriptions.Item label="Email">
-            {user?.email}
-          </Descriptions.Item>
-        </Descriptions>
-
-        <Button
-          danger
-          style={{ marginTop: 16 }}
-          onClick={logout}
-        >
-          Logout
-        </Button>
-      </Card>
+      <EditProfileDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        initialValues={{
+          fullName: user?.fullName,
+          phoneNumber: user?.phoneNumber,
+        }}
+      />
     </DashboardLayout>
   )
 }

@@ -15,12 +15,26 @@ env:
 
 jobs:
 
-# BUILD BACKEND
-  build-api:
+# BUILD SERVICES USING MATRIX
+  build:
     runs-on: ubuntu-latest
+
     permissions:
       id-token: write
       contents: read
+
+    strategy:
+      matrix:
+        include:
+          - service: api
+            path: app
+            image: task-management
+            build: encore
+
+          - service: web
+            path: web
+            image: task-web
+            build: docker
 
     steps:
       - uses: actions/checkout@v4
@@ -32,81 +46,56 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
 
-      - run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
 
+# INSTALL ENCORE ONLY FOR API
       - name: Install Encore
+        if: matrix.build == 'encore'
         run: |
           curl -L https://encore.dev/install.sh | bash
           echo "$HOME/.encore/bin" >> $GITHUB_PATH
 
-      - name: Build API image
+# BUILD IMAGE
+      - name: Build Image
         run: |
-          API_IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-management:${{ env.IMAGE_TAG }}
+          IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}
 
-          cd app
+          cd ${{ matrix.path }}
 
-          cat <<EOF > encore.config.json
-          { "secrets": { "AUTH_SECRET": "dummy_secret_for_build" } }
-          EOF
+          if [ "${{ matrix.build }}" = "encore" ]; then
 
-          encore build docker $API_IMAGE --config encore.config.json
+            cat <<EOF > encore.config.json
+            { "secrets": { "AUTH_SECRET": "dummy_secret_for_build" } }
+            EOF
 
-      - name: Scan API image
+            encore build docker $IMAGE --config encore.config.json
+
+          else
+
+            docker build \
+              --build-arg NEXT_PUBLIC_API_URL=https://duongquockiet.id.vn \
+              -t $IMAGE .
+
+          fi
+
+# SCAN IMAGE
+      - name: Scan Image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-management:${{ env.IMAGE_TAG }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}
           severity: CRITICAL
           exit-code: '1'
 
-      - name: Push API image
+# PUSH IMAGE
+      - name: Push Image
         run: |
-          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-management:${{ env.IMAGE_TAG }}
-
-
-
-# BUILD FRONTEND
-  build-web:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: projects/985227244631/locations/global/workloadIdentityPools/github-action-pool/providers/github-provider
-          service_account: github-actions-deploy@voltarocks-42-sandbox.iam.gserviceaccount.com
-
-      - uses: google-github-actions/setup-gcloud@v2
-
-      - run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
-
-      - name: Build Web image
-        run: |
-          WEB_IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-web:${{ env.IMAGE_TAG }}
-
-          cd web
-
-          docker build --build-arg NEXT_PUBLIC_API_URL=https://duongquockiet.id.vn -t $WEB_IMAGE .
-
-      - name: Scan Web image
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-web:${{ env.IMAGE_TAG }}
-          severity: CRITICAL
-          exit-code: '1'
-
-      - name: Push Web image
-        run: |
-          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/task-web:${{ env.IMAGE_TAG }}
-
-
+          docker push \
+          ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}
 
 # DEPLOY
   deploy:
-    needs: [build-api, build-web]
+    needs: build
     runs-on: ubuntu-latest
 
     permissions:
@@ -122,7 +111,6 @@ jobs:
           service_account: github-actions-deploy@voltarocks-42-sandbox.iam.gserviceaccount.com
 
       - uses: google-github-actions/setup-gcloud@v2
-
 
 # GET INSTANCE
       - name: Get MIG instance
@@ -140,7 +128,6 @@ jobs:
 
           echo "INSTANCE_NAME=$INSTANCE" >> $GITHUB_ENV
 
-
 # COPY COMPOSE
       - name: Copy compose file
         run: |
@@ -152,7 +139,6 @@ jobs:
             --project=${{ env.PROJECT_ID }} \
             --tunnel-through-iap \
             $GCLOUD_SCP_OPTS
-
 
 # DEPLOY SWARM
       - name: Deploy to Swarm
@@ -178,22 +164,15 @@ jobs:
               sudo docker pull $API_IMAGE
               sudo docker pull $WEB_IMAGE
 
-              echo 'Preparing env secrets...'
-
-              # remove
               sudo rm -f /tmp/prod.env
 
-              # create file env
               echo 'DATABASE_URL=postgres://admin:${{ secrets.DB_PASSWORD }}@core_stack_postgres:5432/appdb' | sudo tee /tmp/prod.env > /dev/null
               echo 'AUTH_SECRET=${{ secrets.AUTH_SECRET }}' | sudo tee -a /tmp/prod.env > /dev/null
 
-              # Update docker secret
               sudo docker secret rm $SECRET_NAME 2>/dev/null || true
               sudo docker secret create $SECRET_NAME /tmp/prod.env
 
               sudo rm -f /tmp/prod.env
-
-              echo 'Deploying stack...'
 
               sudo API_IMAGE=$API_IMAGE WEB_IMAGE=$WEB_IMAGE SECRET_NAME=$SECRET_NAME \
               docker stack deploy -c /tmp/docker-compose.app.yml task_stack --with-registry-auth
@@ -214,7 +193,6 @@ jobs:
           done
 
           exit 1
-
 
 # ROLLBACK
       - name: Rollback

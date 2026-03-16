@@ -41,7 +41,7 @@ export async function listMembersFromOrg(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "listMembersFromOrg", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "listMembersFromOrg", params, opts);
@@ -52,7 +52,7 @@ export async function updateMemberFromOrg(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "updateMemberFromOrg", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "updateMemberFromOrg", params, opts);
@@ -63,7 +63,7 @@ export async function deleteMemberFromOrg(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "deleteMemberFromOrg", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "deleteMemberFromOrg", params, opts);
@@ -74,7 +74,7 @@ export async function addToOrganization(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "addToOrganization", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "addToOrganization", params, opts);
@@ -85,7 +85,7 @@ export async function createOrganization(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "createOrganization", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "createOrganization", params, opts);
@@ -96,7 +96,7 @@ export async function getOrganizationById(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "getOrganizationById", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "getOrganizationById", params, opts);
@@ -107,7 +107,7 @@ export async function getMyOrganization(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "getMyOrganization", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "getMyOrganization", params, opts);
@@ -118,7 +118,7 @@ export async function listOrganizations(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "listOrganizations", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "listOrganizations", params, opts);
@@ -129,7 +129,7 @@ export async function listTasks(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "listTasks", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "listTasks", params, opts);
@@ -140,7 +140,7 @@ export async function getTaskById(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "getTaskById", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "getTaskById", params, opts);
@@ -151,7 +151,7 @@ export async function createTask(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "createTask", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "createTask", params, opts);
@@ -162,7 +162,7 @@ export async function updateTask(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "updateTask", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "updateTask", params, opts);
@@ -173,7 +173,7 @@ export async function deleteTask(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "deleteTask", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "deleteTask", params, opts);
@@ -184,7 +184,7 @@ export async function getMe(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "getMe", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "getMe", params, opts);
@@ -195,7 +195,7 @@ export async function updateMe(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "updateMe", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "updateMe", params, opts);
@@ -206,7 +206,7 @@ export async function adminUpdateUser(params, opts) {
     registerTestHandler({
         apiRoute: { service: "app", name: "adminUpdateUser", raw: false, handler, streamingRequest: false, streamingResponse: false },
         middlewares: app_service.default.cfg.middlewares || [],
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
     });
 
     return apiCall("app", "adminUpdateUser", params, opts);

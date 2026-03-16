@@ -6,17 +6,25 @@ import type { RegisterInput, LoginInput } from "./auth.types";
 // register new user
 export const register = api(
   { expose: true, method: "POST", path: "/v1/auth/register" },
-  async (body: RegisterInput): Promise<{ userId: string; token: string }> => {
+  async (body: RegisterInput): Promise<{ auth: { userId: string; token: string } }> => {
     const input = RegisterSchema.parse(body);
-    return AuthService.register(input);
+    const result = await AuthService.register(input);
+
+    return {
+      auth: result
+    };
   }
 );
 
 // login
 export const login = api(
   { expose: true, method: "POST", path: "/v1/auth/login" },
-  async (body: LoginInput): Promise<{ userId: string; token: string }> => {
+  async (body: LoginInput): Promise<{ auth: { userId: string; token: string } }> => {
     const input = LoginSchema.parse(body);
-    return AuthService.login(input);
+    const result = await AuthService.login(input);
+
+    return {
+      auth: result
+    };
   }
 );

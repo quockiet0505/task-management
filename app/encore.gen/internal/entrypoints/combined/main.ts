@@ -73,7 +73,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -85,7 +85,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -97,7 +97,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -109,7 +109,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -121,7 +121,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -133,7 +133,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -145,7 +145,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -157,7 +157,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -169,7 +169,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -181,7 +181,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -193,7 +193,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -205,7 +205,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -217,7 +217,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -229,7 +229,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -241,7 +241,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
     {
@@ -253,7 +253,7 @@ const handlers: Handler[] = [
             streamingRequest:  false,
             streamingResponse: false,
         },
-        endpointOptions: {"expose":false,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
         middlewares: app_service.default.cfg.middlewares || [],
     },
 ];

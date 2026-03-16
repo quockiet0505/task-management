@@ -2,6 +2,7 @@
 
 import { Form, Input, Button, Select } from "antd"
 import { Organization } from "@/types/org" 
+import { useEffect } from "react"
 
 export interface TaskFormValues {
   title: string
@@ -12,12 +13,37 @@ export interface TaskFormValues {
 
 interface Props {
   organizations: Organization[] 
+  initialValues?: TaskFormValues
   onSubmit: (values: TaskFormValues) => void
 }
 
-export default function TaskForm({ organizations, onSubmit }: Props) {
+export default function TaskForm({ organizations, initialValues, onSubmit }: Props) {
+  const [form] = Form.useForm()
+
+  useEffect(() => {
+    if (initialValues) {
+      form.setFieldsValue(initialValues)
+    } else {
+      form.resetFields()
+      form.setFieldsValue({
+        status: "todo",
+        priority: "medium",
+        organizationId: organizations?.length > 0 ? organizations[0].id : undefined
+      })
+    }
+  }, [initialValues, organizations, form])
+
+  const handleFinishFailed = (errorInfo: unknown) => {
+    console.error("DỮ LIỆU FORM CHƯA HỢP LỆ:", errorInfo)
+  }
+
   return (
-    <Form<TaskFormValues> layout="vertical" onFinish={onSubmit}>
+    <Form<TaskFormValues> 
+      form={form}
+      layout="vertical" 
+      onFinish={onSubmit}
+      onFinishFailed={handleFinishFailed}
+    >
       <Form.Item
         label="Organization"
         name="organizationId"
@@ -25,7 +51,7 @@ export default function TaskForm({ organizations, onSubmit }: Props) {
       >
         <Select
           placeholder="Select an organization"
-          options={organizations.map((org) => ({
+          options={(organizations || []).map((org) => ({
             label: org.name,
             value: org.id,
           }))}
@@ -40,7 +66,7 @@ export default function TaskForm({ organizations, onSubmit }: Props) {
         <Input placeholder="Enter task title" />
       </Form.Item>
 
-      <Form.Item label="Status" name="status" initialValue="todo">
+      <Form.Item label="Status" name="status">
         <Select
           options={[
             { label: "Todo", value: "todo" },
@@ -50,7 +76,7 @@ export default function TaskForm({ organizations, onSubmit }: Props) {
         />
       </Form.Item>
 
-      <Form.Item label="Priority" name="priority" initialValue="medium">
+      <Form.Item label="Priority" name="priority">
         <Select
           options={[
             { label: "Low", value: "low" },
@@ -60,9 +86,11 @@ export default function TaskForm({ organizations, onSubmit }: Props) {
         />
       </Form.Item>
 
-      <Button type="primary" htmlType="submit" block>
-        Create Task
-      </Button>
+      <Form.Item>
+        <Button type="primary" htmlType="submit" block>
+          {initialValues ? "Update Task" : "Create Task"}
+        </Button>
+      </Form.Item>
     </Form>
   )
 }

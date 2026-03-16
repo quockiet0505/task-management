@@ -1,20 +1,18 @@
 import { APIError, ErrCode } from "encore.dev/api"
 import { MemberRepo } from "./members.repo"
 import { AuthRepo } from "../auth/auth.repo"
-
-type Role = "admin" | "member"
+import type { Role, MemberResponse, AddMemberResponse, DeleteMemberResponse } from "./member.types"
 
 export const MemberService = {
-  async lists(organizationId: string) {
+  async lists(organizationId: string): Promise<MemberResponse[]> {
     return MemberRepo.listByOrganization(organizationId)
   },
 
-  // add member to org
   async addMember(data: {
     userId: string
     organizationId: string
     role: Role
-  }) {
+  }): Promise<AddMemberResponse> {
     const user = await AuthRepo.findUserById(data.userId)
     if (!user) {
       throw new APIError(ErrCode.NotFound, "User not found")
@@ -32,15 +30,14 @@ export const MemberService = {
     }
 
     await MemberRepo.addMember(data)
-    return { message: "Member added successfully" }
+    return { success: true }
   },
 
-  // update member role in org
   async updateMember(data: {
     userId: string
     organizationId: string
     role: Role
-  }) {
+  }): Promise<MemberResponse> {
     const member = await AuthRepo.getMembershipByOrg(
       data.userId,
       data.organizationId
@@ -54,12 +51,24 @@ export const MemberService = {
     }
 
     await MemberRepo.updateMember(data)
+    
+    const user = await AuthRepo.findUserById(data.userId)
+    if (!user) {
+      throw new APIError(ErrCode.NotFound, "User not found")
+    }
+
+    return {
+      userId: data.userId,
+      email: user.email,
+      fullName: user.fullName || null,
+      role: data.role
+    }
   },
 
   async deleteMember(data: {
     userId: string
     organizationId: string
-  }) {
+  }): Promise<DeleteMemberResponse> {
     const member = await AuthRepo.getMembershipByOrg(
       data.userId,
       data.organizationId
@@ -73,5 +82,6 @@ export const MemberService = {
     }
 
     await MemberRepo.deleteMember(data)
+    return { success: true }
   },
 }

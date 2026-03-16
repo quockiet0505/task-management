@@ -12,7 +12,7 @@ export const UpdateMemberSchema = CreateMemberSchema.partial()
 // Input schema
  export const AddMemberSchema = z.object({
   organizationId: z.uuid(),
-  email: z.string().email(),
+  email: z.email(),
   role: z.enum(["admin", "member"]),
 })
 
