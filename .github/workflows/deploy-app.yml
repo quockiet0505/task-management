@@ -65,9 +65,7 @@ jobs:
 
           if [ "${{ matrix.build }}" = "encore" ]; then
 
-            cat <<EOF > encore.config.json
-            { "secrets": { "AUTH_SECRET": "dummy_secret_for_build" } }
-            EOF
+            echo '{ "secrets": { "AUTH_SECRET": "dummy_secret_for_build" } }' > encore.config.json
 
             encore build docker $IMAGE --config encore.config.json
 

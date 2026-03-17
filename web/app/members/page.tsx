@@ -1,11 +1,12 @@
 "use client"
 
-import { Typography, message } from "antd"
+import { Typography, message, Select, Tag } from "antd" // Thêm Select, Tag
 import DashboardLayout from "@/components/layout/DashboardLayout"
 import MemberList from "@/components/members/MemberList"
 import MemberForm, { MemberFormValues } from "@/components/members/MemberForm"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 
 import { Member } from "@/types/member"
 import { Organization } from "@/types/org"
@@ -16,6 +17,7 @@ import { listOrganizations } from "@/services/orgService"
 import CreateButton from "@/components/common/CreateButton"
 
 const { Title } = Typography
+const { Option } = Select
 
 export default function MembersPage() {
   const [open, setOpen] = useState(false)
@@ -24,25 +26,50 @@ export default function MembersPage() {
   const [organizationId, setOrganizationId] = useState<string | null>(null)
   const [orgs, setOrgs] = useState<Organization[]>([])
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const orgsData = await listOrganizations()
-        setOrgs(orgsData)
+  // import orgId from url 
+  const searchParams = useSearchParams()
+  const orgIdFromUrl = searchParams.get('orgId')
 
-        if (orgsData.length > 0) {
-          setOrganizationId(orgsData[0].id)
-          const data = await listMembers(orgsData[0].id)
-          setMembers(data ?? [])
-        }
-      } catch (error) {
-        console.error("Load data failed", error)
-        message.error("Failed to load data")
+  // load orgs
+  useEffect(() =>{
+    const loadOrgs = async () =>{
+      try {
+        const orgsData = await listOrganizations();
+        setOrgs(orgsData);
+      } catch(error){
+        console.error("Load organizations failed", error);
+        message.error("Failed to load organizations");
       }
     }
-
-    init()
+    loadOrgs();
   }, [])
+
+  // load members khi organizationId thay đổi
+  useEffect(() =>{
+    const loadMembers = async () =>{
+      if(!organizationId) return;
+      try{
+        const data = await listMembers(organizationId);
+        setMembers(data ?? []);
+      }catch(error){
+        console.error("Load member failed", error);
+        message.error("Failed to load members");
+      }
+    }
+    loadMembers();
+  }, [organizationId])
+
+  // set org từ url hoặc org đầu tiên
+  useEffect(() => {
+    if (orgs.length > 0) {
+      if (orgIdFromUrl && orgs.find(org => org.id === orgIdFromUrl)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setOrganizationId(orgIdFromUrl);
+      } else {
+        setOrganizationId(orgs[0].id);
+      }
+    }
+  }, [orgs, orgIdFromUrl]);
 
   const handleAddMember = async (values: MemberFormValues) => {
     try {
@@ -51,12 +78,10 @@ export default function MembersPage() {
         email: values.userEmail!,
         role: values.role,
       })
-
       if (organizationId) {
         const data = await listMembers(organizationId)
         setMembers(data ?? [])
       }
-
       setOpen(false)
       message.success("Member added successfully")
     } catch (err) {
@@ -68,13 +93,11 @@ export default function MembersPage() {
   const handleUpdateRole = async (values: MemberFormValues) => {
     try {
       if (!editingMember || !organizationId) return
-
       await updateMemberRole({
         organizationId: values.organizationId,
         userId: editingMember.userId,
         role: values.role
       })
-
       const data = await listMembers(organizationId)
       setMembers(data ?? [])
       setEditingMember(null)
@@ -88,12 +111,7 @@ export default function MembersPage() {
   const handleDelete = async (userId: string) => {
     try {
       if (!organizationId) return
-
-      await deleteMember({
-        organizationId,
-        userId
-      })
-
+      await deleteMember({ organizationId, userId })
       const data = await listMembers(organizationId)
       setMembers(data ?? [])
       message.success("Member removed successfully")
@@ -103,9 +121,28 @@ export default function MembersPage() {
     }
   }
 
+  const currentOrg = orgs.find(org => org.id === organizationId)
+
   return (
     <DashboardLayout>
-      <Title level={3}>Members Management</Title>
+      <Title level={3}>
+        {currentOrg ? `Members of ${currentOrg.name}` : "Members Management"}
+      </Title>
+
+      {/* Thêm Select để chuyển org */}
+      <div style={{ marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center' }}>
+        <Select
+          placeholder="Select organization"
+          style={{ width: 250 }}
+          value={organizationId}
+          onChange={(value) => setOrganizationId(value)}
+        >
+          {orgs.map(org => (
+            <Option key={org.id} value={org.id}>{org.name}</Option>
+          ))}
+        </Select>
+        {currentOrg && <Tag color="blue">Viewing: {currentOrg.name}</Tag>}
+      </div>
 
       <div style={{ marginBottom: 16 }}>
         <CreateButton text="Add Member" onClick={() => setOpen(true)} />
@@ -122,7 +159,9 @@ export default function MembersPage() {
           organizationId: editingMember.organizationId,
           userEmail: editingMember.email,
           role: editingMember.role
-        } : undefined}
+        } : {
+          organizationId: organizationId || undefined
+        }}
         organizations={orgs}
         title={editingMember ? "Edit Member Role" : "Add Member"}
         submitText={editingMember ? "Update Role" : "Add Member"}
@@ -132,7 +171,8 @@ export default function MembersPage() {
         members={members} 
         organizations={orgs}
         onDelete={handleDelete}
-        onEdit={setEditingMember}  
+        onEdit={setEditingMember}
+       
       />
     </DashboardLayout>
   )

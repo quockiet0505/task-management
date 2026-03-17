@@ -1,10 +1,9 @@
 "use client"
 
-import { Table, Tag, Space, Button, Popconfirm, message, Select } from "antd"
+import { Table, Tag, Space, Button, Popconfirm, message } from "antd" 
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons"
 import { Member } from "@/types/member"
 import { Organization } from "@/types/org"
-import { useState } from "react"
 import { ColumnsType } from "antd/es/table"
 
 interface Props {
@@ -16,12 +15,9 @@ interface Props {
 
 export default function MemberList({ 
   members = [], 
-  organizations = [],
   onDelete, 
   onEdit
 }: Props) {
-  const [filterOrg, setFilterOrg] = useState<string | null>(null)
-
   const handleDelete = async (userId: string) => {
     try {
       await onDelete?.(userId)
@@ -31,10 +27,6 @@ export default function MemberList({
       message.error("Failed to remove member")
     }
   }
-
-  const filteredMembers = filterOrg 
-    ? members.filter(m => m.organizationId === filterOrg)
-    : members
 
   const columns: ColumnsType<Member> = [
     {
@@ -61,8 +53,6 @@ export default function MemberList({
       dataIndex: "organizationName",
       key: "organizationName",
       render: (orgName?: string) => orgName || "N/A",
-      filters: organizations.map(org => ({ text: org.name, value: org.id })),
-      onFilter: (value, record) => record.organizationId === value,
     },
     {
       title: "Role",
@@ -72,11 +62,6 @@ export default function MemberList({
         const color = role === "admin" ? "red" : "blue"
         return <Tag color={color}>{role === "admin" ? "Admin" : "Member"}</Tag>
       },
-      filters: [
-        { text: 'Admin', value: 'admin' },
-        { text: 'Member', value: 'member' },
-      ],
-      onFilter: (value, record) => record.role === value,
     },
     {
       title: "Actions",
@@ -109,29 +94,12 @@ export default function MemberList({
   ]
 
   return (
-    <div>
-      <div style={{ marginBottom: 16 }}>
-        <Select
-          placeholder="Filter by Organization"
-          style={{ width: 250 }}
-          allowClear
-          onChange={(value) => setFilterOrg(value)}
-        >
-          {organizations.map(org => (
-            <Select.Option key={org.id} value={org.id}>
-              {org.name}
-            </Select.Option>
-          ))}
-        </Select>
-      </div>
-
-      <Table
-        rowKey="userId"
-        columns={columns}
-        dataSource={filteredMembers}
-        pagination={{ pageSize: 10 }}
-        bordered
-      />
-    </div>
+    <Table
+      rowKey="userId"
+      columns={columns}
+      dataSource={members} // Hiển thị trực tiếp members đã lọc từ cha
+      pagination={{ pageSize: 10 }}
+      bordered
+    />
   )
 }
