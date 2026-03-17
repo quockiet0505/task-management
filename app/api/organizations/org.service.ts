@@ -7,10 +7,11 @@ export const OrganizationService = {
   async create(input: { name: string }, userId: string) {
     const org = await OrganizationRepo.create({ name: input.name })
 
+    // owner
     await AuthRepo.addMember({
       userId,
       organizationId: org.id,
-      role: "admin",
+      role: "owner",
     })
 
     return org

@@ -212,3 +212,14 @@ export async function adminUpdateUser(params, opts) {
     return apiCall("app", "adminUpdateUser", params, opts);
 }
 
+export async function changePassword(params, opts) {
+    const handler = (await import("../../../../api\\users\\user.api")).changePassword;
+    registerTestHandler({
+        apiRoute: { service: "app", name: "changePassword", raw: false, handler, streamingRequest: false, streamingResponse: false },
+        middlewares: app_service.default.cfg.middlewares || [],
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+    });
+
+    return apiCall("app", "changePassword", params, opts);
+}
+

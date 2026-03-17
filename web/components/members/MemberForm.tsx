@@ -1,9 +1,10 @@
 "use client"
 
-import { Modal, Form, Input, Select, Button } from "antd"
+import { Modal, Form, Input, Select, Button, Spin } from "antd"
 import { Organization } from "@/types/org"
-import { Role } from "@/types/member"
-import { useEffect } from "react"
+import { Member, Role } from "@/types/member"
+import { useEffect, useState } from "react"
+import { useAuth } from "@/context/AuthContext"
 
 export interface MemberFormValues {
   organizationId: string
@@ -19,6 +20,9 @@ interface Props {
   organizations?: Organization[]
   title?: string
   submitText?: string
+  loading?: boolean
+  currentUserRole?: Role 
+  targetMember?: Member 
 }
 
 export default function MemberForm({
@@ -28,24 +32,84 @@ export default function MemberForm({
   initialValues,
   organizations = [],
   title = "Add Member",
-  submitText = "Add Member"
+  submitText = "Add Member",
+  loading = false,
+  currentUserRole,
+  targetMember
 }: Props) {
   const [form] = Form.useForm<MemberFormValues>()
+  const { user } = useAuth()
 
   useEffect(() => {
     if (open) {
-      if (initialValues) {
+      if (initialValues && Object.keys(initialValues).length > 0) {
+        // initialValues, set form
         form.setFieldsValue(initialValues)
       } else {
+        // Không có initialValues 
         form.resetFields()
+        
+        //organizations có data không
+        const defaultOrgId = organizations.length > 0 ? organizations[0].id : undefined
+        
+        form.setFieldsValue({ 
+          organizationId: defaultOrgId,
+          role: "member" 
+        })
       }
     }
-  }, [open, initialValues, form])
+  }, [open, initialValues, form, organizations])
 
-  const handleFinish = (values: MemberFormValues) => {
-    onSubmit(values)
-    form.resetFields()
-    onClose()
+  // Xác định role options dựa trên quyền
+  const getRoleOptions = () => {
+    const options = [
+      { label: "Member", value: "member", disabled: false }
+    ]
+    
+    // Nếu là OWNER
+    if (currentUserRole === "owner") {
+      options.unshift({ label: "Admin", value: "admin", disabled: false })
+      
+      // Chỉ hiển thị Owner nếu đang edit và target là owner
+      if (targetMember?.role === "owner") {
+        options.unshift({ 
+          label: "Owner", 
+          value: "owner", 
+          disabled: true 
+        })
+      }
+    }
+    
+    // Nếu là ADMIN
+    if (currentUserRole === "admin") {
+      // Admin chỉ có thể thấy role hiện tại của target
+      if (targetMember?.role === "admin") {
+        options.unshift({ 
+          label: "Admin", 
+          value: "admin", 
+          disabled: true 
+        })
+      }
+      
+      // Admin có thể thấy option admin nhưng disabled
+      if (targetMember?.role === "member") {
+        options.unshift({ 
+          label: "Admin", 
+          value: "admin", 
+          disabled: true 
+        })
+      }
+    }
+    
+    // Nếu đang edit chính mình
+    if (targetMember?.userId === user?.id) {
+      return options.map(opt => ({
+        ...opt,
+        disabled: true // Không thể tự sửa role
+      }))
+    }
+    
+    return options
   }
 
   return (
@@ -57,52 +121,83 @@ export default function MemberForm({
         form.resetFields()
         onClose()
       }}
+      destroyOnClose
     >
-      <Form form={form} layout="vertical" onFinish={handleFinish}>
-        <Form.Item
-          label="Organization"
-          name="organizationId"
-          rules={[{ required: true, message: "Please select organization" }]}
-        >
-          <Select
-            placeholder="Select organization"
-            options={organizations.map((org) => ({
-              label: org.name,
-              value: org.id,
-            }))}
-            disabled={!!initialValues?.organizationId} 
-          />
-        </Form.Item>
-
-        {!initialValues && ( 
+      <Spin spinning={loading}>
+        <Form form={form} layout="vertical" onFinish={onSubmit}>
           <Form.Item
-            label="User Email"
-            name="userEmail"
-            rules={[{ required: true, message: "Please enter user email" }]}
+            label="Organization"
+            name="organizationId"
+            rules={[{ required: true, message: "Please select organization" }]}
           >
-            <Input placeholder="user@example.com" />
+            <Select
+              placeholder="Select organization"
+              disabled={!!initialValues?.organizationId || loading}
+            >
+              {organizations.map((org) => (
+                <Select.Option key={org.id} value={org.id}>
+                  {org.name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
-        )}
 
-        {initialValues && ( 
-          <Form.Item label="Email" name="userEmail">
-            <Input disabled />
+          {!initialValues && ( 
+            <Form.Item
+              label="User Email"
+              name="userEmail"
+              rules={[
+                { required: true, message: "Please enter user email" },
+                { type: 'email', message: "Please enter a valid email" }
+              ]}
+            >
+              <Input placeholder="user@example.com" disabled={loading} />
+            </Form.Item>
+          )}
+
+          {initialValues && ( 
+            <Form.Item label="Email" name="userEmail">
+              <Input disabled />
+            </Form.Item>
+          )}
+
+          <Form.Item 
+            label="Role" 
+            name="role" 
+            rules={[{ required: true, message: "Please select role" }]}
+          >
+            <Select disabled={loading}>
+              {getRoleOptions().map(opt => (
+                <Select.Option 
+                  key={opt.value} 
+                  value={opt.value} 
+                  disabled={opt.disabled}
+                >
+                  {opt.label} {opt.disabled ? "(Locked)" : ""}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
-        )}
 
-        <Form.Item label="Role" name="role" rules={[{ required: true, message: "Please select role" }]}>
-          <Select
-            options={[
-              { label: "Admin", value: "admin" },
-              { label: "Member", value: "member" },
-            ]}
-          />
-        </Form.Item>
+          {targetMember?.userId === user?.id && (
+            <div style={{ color: 'orange', marginBottom: 16 }}>
+              You cannot change your own role. Contact owner for role changes.
+            </div>
+          )}
 
-        <Button type="primary" htmlType="submit" block>
-          {submitText}
-        </Button>
-      </Form>
+          {currentUserRole === "admin" && targetMember?.role === "admin" && (
+            <div style={{ color: 'orange', marginBottom: 16 }}>
+              You cannot modify another admin&apos;s role.
+            </div>
+          )}
+
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block loading={loading}>
+              {submitText}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Spin>
     </Modal>
   )
 }

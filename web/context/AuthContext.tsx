@@ -1,14 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect } from "react"
-
-interface User {
-  id: string
-  email: string,
-  fullName?: string
-  phoneNumber?: string
-  createdAt?: string
-}
+import { User } from "@/types/user" 
 
 interface AuthContextType {
   user: User | null
@@ -28,9 +21,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const storedToken = localStorage.getItem("token")
 
     if (storedUser && storedToken) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setUser(JSON.parse(storedUser))
-      setToken(storedToken)
+      try {
+        const parsedUser = JSON.parse(storedUser)
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setUser(parsedUser)
+        setToken(storedToken)
+      } catch (error) {
+        console.error("Failed to parse stored user:", error)
+        localStorage.removeItem("user")
+        localStorage.removeItem("token")
+      }
     }
   }, [])
 

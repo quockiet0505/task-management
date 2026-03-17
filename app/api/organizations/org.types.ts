@@ -3,7 +3,6 @@ export interface Organization {
      id: string
      name: string
      createdAt: Date
-     updatedAt: Date
    }
    
    export interface CreateOrganizationInput {
@@ -13,6 +12,7 @@ export interface Organization {
    export interface OrganizationResponse {
      id: string
      name: string
+     createdAt: Date
    }
    
    export interface CreateOrganizationResponse {

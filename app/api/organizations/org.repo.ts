@@ -12,12 +12,17 @@ export const OrganizationRepo ={
           then(r => r[0])
      },
 
-     create(data: any){
-          return db.insert(organizations).
-          values(data).
-          returning().
-          then(r => r[0])
-     },
+     async create(data: { name: string }) {
+          const [org] = await db
+            .insert(organizations)
+            .values({
+              name: data.name,
+              // created_at  DB DEFAULT now()
+            })
+            .returning()
+          
+          return org
+        },
 
      update(id: string, name: string){
           return db.
@@ -31,6 +36,7 @@ export const OrganizationRepo ={
             .select({
               id: organizations.id,
               name: organizations.name,
+              createdAt: organizations.createdAt,
             })
             .from(organizationMembers)
             .innerJoin(
@@ -48,6 +54,7 @@ export const OrganizationRepo ={
           .select({
                id: organizations.id,
                name: organizations.name,
+               createdAt: organizations.createdAt,
           })
           .from(organizationMembers)
           .innerJoin(

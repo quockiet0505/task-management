@@ -7,14 +7,12 @@ export interface Task {
   title: string
   status: TaskStatus
   priority: TaskPriority
-
   organizationId: string
-
+  organizationName?: string  
   assignedTo?: string
   assignedBy?: string
-
-  createdAt?: string
-  dueDate?: string
+  createdAt?: Date
+  dueDate?: Date | null  
 }
 
 export interface CreateTaskRequest {
@@ -23,6 +21,16 @@ export interface CreateTaskRequest {
   priority: TaskPriority
   organizationId: string
   assignedTo?: string
+  dueDate?: Date  
+}
+
+export interface UpdateTaskRequest {
+  title?: string
+  status?: TaskStatus
+  priority?: TaskPriority
+  organizationId: string
+  assignedTo?: string
+  dueDate?: Date 
 }
 
 export interface ListTasksRequest {

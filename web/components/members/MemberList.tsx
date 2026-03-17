@@ -5,6 +5,7 @@ import { DeleteOutlined, EditOutlined } from "@ant-design/icons"
 import { Member } from "@/types/member"
 import { Organization } from "@/types/org"
 import { ColumnsType } from "antd/es/table"
+import { Role } from "@/types/member"
 
 interface Props {
   members?: Member[]
@@ -58,9 +59,16 @@ export default function MemberList({
       title: "Role",
       dataIndex: "role",
       key: "role",
-      render: (role) => {
-        const color = role === "admin" ? "red" : "blue"
-        return <Tag color={color}>{role === "admin" ? "Admin" : "Member"}</Tag>
+      render: (role: Role) => {
+        const color = 
+          role === "owner" ? "gold" :
+          role === "admin" ? "red" : 
+          "blue"
+        const text = 
+          role === "owner" ? "Owner" :
+          role === "admin" ? "Admin" : 
+          "Member"
+        return <Tag color={color}>{text}</Tag>
       },
     },
     {
@@ -97,7 +105,7 @@ export default function MemberList({
     <Table
       rowKey="userId"
       columns={columns}
-      dataSource={members} // Hiển thị trực tiếp members đã lọc từ cha
+      dataSource={members} 
       pagination={{ pageSize: 10 }}
       bordered
     />

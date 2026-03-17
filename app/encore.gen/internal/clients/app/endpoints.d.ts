@@ -81,4 +81,8 @@ import { adminUpdateUser as adminUpdateUser_handler } from "../../../../api\\use
 declare const adminUpdateUser: WithCallOpts<typeof adminUpdateUser_handler>;
 export { adminUpdateUser };
 
+import { changePassword as changePassword_handler } from "../../../../api\\users\\user.api.js";
+declare const changePassword: WithCallOpts<typeof changePassword_handler>;
+export { changePassword };
+
 

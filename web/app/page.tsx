@@ -75,7 +75,7 @@ export default function HomePage() {
           )}
 
           {status === 'ok' && (
-            <Space direction="vertical" style={{ width: '100%', justifyContent: 'center' }}>
+            <Space orientation="vertical" style={{ width: '100%', justifyContent: 'center' }}>
               <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 40 }} />
               <Title level={4} style={{ color: '#52c41a', margin: 0 }}>
                 Backend Connected Successfully!

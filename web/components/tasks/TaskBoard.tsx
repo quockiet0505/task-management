@@ -4,6 +4,7 @@ import { Task } from "@/types/task"
 import { Table, Tag, Space, Button, Popconfirm, message } from "antd"
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons"
 import { ColumnsType } from "antd/es/table"
+import dayjs from "dayjs"
 
 interface Props {
   tasks?: Task[]
@@ -17,7 +18,6 @@ export default function TaskBoard({ tasks = [], onEdit, onDelete }: Props) {
       await onDelete?.(taskId)
       message.success("Task deleted successfully")
     } catch (error) {
-      console.error("Delete error:", error) 
       message.error("Failed to delete task")
     }
   }
@@ -25,6 +25,7 @@ export default function TaskBoard({ tasks = [], onEdit, onDelete }: Props) {
   const columns: ColumnsType<Task> = [
     {
       title: "STT",
+      key: "index",
       render: (_, __, index: number) => index + 1,
       width: 70,
     },
@@ -32,20 +33,23 @@ export default function TaskBoard({ tasks = [], onEdit, onDelete }: Props) {
       title: "Title",
       dataIndex: "title",
       key: "title",
-      sorter: (a: Task, b: Task) => (a.title || "").localeCompare(b.title || ""),
+      sorter: (a, b) => (a.title || "").localeCompare(b.title || ""),
+    },
+    {
+      title: "Organization",
+      dataIndex: "organizationName",
+      key: "organizationName",
+      render: (name?: string) => name || "N/A",
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
       render: (status: string) => {
-        const color =
-          status === "done"
-            ? "green"
-            : status === "in-progress"
-            ? "blue"
-            : "orange"
-
+        const color = 
+          status === "done" ? "green" : 
+          status === "in-progress" ? "blue" : 
+          "orange"
         return <Tag color={color}>{status}</Tag>
       },
       filters: [
@@ -53,20 +57,17 @@ export default function TaskBoard({ tasks = [], onEdit, onDelete }: Props) {
         { text: 'In Progress', value: 'in-progress' },
         { text: 'Done', value: 'done' },
       ],
-      onFilter: (value, record) => { if (typeof value === 'string') { return record.status === value } return false },
+      onFilter: (value, record) => record.status === value,
     },
     {
       title: "Priority",
       dataIndex: "priority",
       key: "priority",
       render: (priority: string) => {
-        const color =
-          priority === "high"
-            ? "red"
-            : priority === "medium"
-            ? "gold"
-            : "green"
-
+        const color = 
+          priority === "high" ? "red" : 
+          priority === "medium" ? "gold" : 
+          "green"
         return <Tag color={color}>{priority}</Tag>
       },
       filters: [
@@ -74,28 +75,54 @@ export default function TaskBoard({ tasks = [], onEdit, onDelete }: Props) {
         { text: 'Medium', value: 'medium' },
         { text: 'High', value: 'high' },
       ],
-      onFilter: (value, record) => { if (typeof value === 'string') { return record.status === value } return false },
+      onFilter: (value, record) => record.priority === value,
     },
+    
     {
       title: "Created",
-      dataIndex: "created_at",
-      key: "created_at",
-      render: (date: string) =>
-        date ? new Date(date).toLocaleDateString("vi-VN") : "",
-      sorter: (a: Task, b: Task) => 
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (date?: Date) => 
+        date ? dayjs(date).format("DD/MM/YYYY") : "",
+      sorter: (a, b) => 
         new Date(a.createdAt || "").getTime() - new Date(b.createdAt || "").getTime(),
     },
     {
+      title: "Due Date",
+      dataIndex: "dueDate",
+      key: "dueDate",
+      render: (date?: Date | null) => {
+        if (!date) return "No due date"
+        const dueDate = dayjs(date)
+        const today = dayjs()
+        const isOverdue = dueDate.isBefore(today, 'day') && !dueDate.isSame(today, 'day')
+        
+        return (
+          <span style={{ color: isOverdue ? 'red' : 'inherit' }}>
+            {dueDate.format("DD/MM/YYYY")}
+            {isOverdue && " ⚠️"}
+          </span>
+        )
+      },
+      sorter: (a, b) => {
+        const dateA = a.dueDate ? new Date(a.dueDate).getTime() : 0
+        const dateB = b.dueDate ? new Date(b.dueDate).getTime() : 0
+        return dateA - dateB
+      },
+    },
+    
+    {
       title: "Actions",
       key: "actions",
-      width: 200,
-      render: (_: unknown, record: Task) => (
+      width: 150,
+      render: (_, record) => (
         <Space>
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            size="small"
+          <Button 
+            icon={<EditOutlined />} 
             onClick={() => onEdit?.(record)}
+            type="primary"
+            ghost
+            size="small"
           >
             Edit
           </Button>
@@ -106,11 +133,7 @@ export default function TaskBoard({ tasks = [], onEdit, onDelete }: Props) {
             okText="Yes"
             cancelText="No"
           >
-            <Button 
-              danger 
-              icon={<DeleteOutlined />} 
-              size="small"
-            >
+            <Button danger icon={<DeleteOutlined />} size="small">
               Delete
             </Button>
           </Popconfirm>

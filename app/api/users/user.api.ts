@@ -3,6 +3,7 @@ import { getAuthData } from "~encore/auth"
 import {
   UpdateMeSchema,
   AdminUpdateUserSchema,
+  ChangePasswordSchema
 } from "../../lib/validation/users"
 import { UserService } from "./user.service"
 import { requireRole } from "../../api/auth/authorization.service"
@@ -52,5 +53,18 @@ export const adminUpdateUser = api(
     const user = await UserService.adminUpdateUser(userId, input)
 
     return { user }
+  }
+)
+
+// change password
+export const changePassword = api(
+  { method: "POST", path: "/v1/users/change-password", auth: true, expose: true },
+  async (body: { currentPassword: string; newPassword: string }): Promise<{ success: boolean }> => {
+    const auth = getAuthData()
+    const input = ChangePasswordSchema.parse(body)
+    
+    await UserService.changePassword(auth.userID, input.currentPassword, input.newPassword)
+    
+    return { success: true }
   }
 )

@@ -10,7 +10,6 @@ import type {
   CreateTaskInput,
   UpdateTaskInput,
   ListTaskInput,
-  Task,
   ListTasksResponse,
   GetTaskResponse,
   CreateTaskResponse,
@@ -29,7 +28,7 @@ export const listTasks = api(
 
     const tasks = await TaskService.list(input, body.organizationId)
 
-    return { tasks: tasks as Task[] }
+    return { tasks }  
   }
 )
 
@@ -41,7 +40,7 @@ export const getTaskById = api(
 
     const task = await TaskService.get(params.id, params.organizationId)
 
-    return { task: task as Task }
+    return { task }  
   }
 )
 
@@ -67,7 +66,7 @@ export const createTask = api(
       body.organizationId
     )
 
-    return { task: task as Task }
+    return { task }  
   }
 )
 
@@ -80,7 +79,7 @@ export const updateTask = api(
 
     const task = await TaskService.update(params.id, input, params.organizationId)
 
-    return { task: task as Task }
+    return { task }  
   }
 )
 

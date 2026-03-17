@@ -7,7 +7,7 @@ export const organizationMembers = pgTable(
   {
     userId: uuid("user_id").references(() => users.id).notNull(),
     organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
-    role: text("role").$type<"admin" | "member">().notNull(), // admin | member
+    role: text("role").$type<"admin" | "member" | "owner">().notNull(), // admin | member | owner
   },
   (t) => ({
     pk: primaryKey({ columns: [t.userId, t.organizationId] }),

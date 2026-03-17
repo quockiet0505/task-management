@@ -1,5 +1,6 @@
 import { db } from "../../db"
 import { tasks } from "../../db/schema/tasks"
+import { organizations } from "../../db/schema/organizations" 
 import { eq, and } from "drizzle-orm"
 
 export const TaskRepo = {
@@ -29,22 +30,50 @@ export const TaskRepo = {
   },
 
   // get task by id and org id
-  getById(id: string, orgId: string) {
-    return db
-      .select()
+  async getById(id: string, orgId: string) {
+    const result = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        status: tasks.status,
+        priority: tasks.priority,
+        organizationId: tasks.organizationId,
+        organizationName: organizations.name,
+        assignedBy: tasks.assignedBy,
+        assignedTo: tasks.assignedTo,
+        createdAt: tasks.createdAt,
+        dueDate: tasks.dueDate,
+      })
       .from(tasks)
+      .innerJoin(organizations, eq(tasks.organizationId, organizations.id))
       .where(and(eq(tasks.id, id), eq(tasks.organizationId, orgId)))
       .limit(1)
-      .then((r) => r[0])
+
+    return result[0]
   },
 
   // list tasks by org
-  list(orgId: string, filter: { status?: string; priority?: string }) {
+  async list(orgId: string, filter: { status?: string; priority?: string }) {
     const cond = [eq(tasks.organizationId, orgId)]
     if (filter.status) cond.push(eq(tasks.status, filter.status as any))
     if (filter.priority) cond.push(eq(tasks.priority, filter.priority as any))
 
-    return db.select().from(tasks).where(and(...cond))
+    return db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        status: tasks.status,
+        priority: tasks.priority,
+        organizationId: tasks.organizationId,
+        organizationName: organizations.name,
+        assignedBy: tasks.assignedBy,
+        assignedTo: tasks.assignedTo,
+        createdAt: tasks.createdAt,
+        dueDate: tasks.dueDate,
+      })
+      .from(tasks)
+      .innerJoin(organizations, eq(tasks.organizationId, organizations.id))
+      .where(and(...cond))
   },
 
   // update task

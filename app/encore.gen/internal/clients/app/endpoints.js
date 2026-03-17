@@ -141,3 +141,10 @@ export async function adminUpdateUser(params, opts) {
 
     return apiCall("app", "adminUpdateUser", params, opts);
 }
+export async function changePassword(params, opts) {
+    if (typeof ENCORE_DROP_TESTS === "undefined" && process.env.NODE_ENV === "test") {
+        return TEST_ENDPOINTS.changePassword(params, opts);
+    }
+
+    return apiCall("app", "changePassword", params, opts);
+}

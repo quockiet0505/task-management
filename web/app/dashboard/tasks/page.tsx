@@ -1,6 +1,6 @@
 "use client"
 
-import { Typography, Modal, message } from "antd"
+import { Typography, Modal, message, Select } from "antd"
 import { useState, useEffect } from "react"
 
 import DashboardLayout from "@/components/layout/DashboardLayout"
@@ -13,6 +13,8 @@ import { listOrganizations } from "@/services/orgService"
 
 import { Task } from "@/types/task"
 import { Organization } from "@/types/org"
+
+import dayjs from "dayjs"
 
 const { Title } = Typography
 
@@ -65,6 +67,8 @@ export default function TasksPage() {
         status: values.status,
         priority: values.priority ?? "medium",
         organizationId: values.organizationId,
+        assignedTo: values.assignedTo,
+        dueDate: values.dueDate,
       })
       await loadTasks(values.organizationId)
       setOpen(false)
@@ -78,12 +82,21 @@ export default function TasksPage() {
   const handleUpdateTask = async (values: TaskFormValues) => {
     try {
       if (!editingTask) return
+      
+      console.log("Updating task:", {
+        id: editingTask.id,
+        values: values
+      })
+
       await updateTask(editingTask.id, {
         title: values.title,
         status: values.status,
         priority: values.priority ?? "medium",
         organizationId: values.organizationId,
+        assignedTo: values.assignedTo,
+        dueDate: values.dueDate,
       })
+      
       await loadTasks(values.organizationId)
       setEditingTask(null)
       setOpen(false)
@@ -115,9 +128,33 @@ export default function TasksPage() {
     setEditingTask(null)
   }
 
+  const handleOrgChange = (orgId: string) => {
+    setSelectedOrgId(orgId)
+    loadTasks(orgId)
+  }
+
+  const currentOrg = orgs.find(org => org.id === selectedOrgId)
+
   return (
     <DashboardLayout>
-      <Title level={3}>Tasks</Title>
+      <Title level={3}>
+        {currentOrg ? `Tasks of ${currentOrg.name}` : "Tasks"}
+      </Title>
+
+      <div style={{ marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center' }}>
+        <Select
+          placeholder="Select organization"
+          style={{ width: 250 }}
+          value={selectedOrgId}
+          onChange={handleOrgChange}
+        >
+          {orgs.map(org => (
+            <Select.Option key={org.id} value={org.id}>
+              {org.name}
+            </Select.Option>
+          ))}
+        </Select>
+      </div>
 
       <div style={{ marginBottom: 16 }}>
         <CreateButton text="Create Task" onClick={() => setOpen(true)} />
@@ -134,6 +171,7 @@ export default function TasksPage() {
         footer={null} 
         onCancel={handleCloseForm}
         title={editingTask ? "Edit Task" : "Create Task"}
+        width={600}
       >
         <TaskForm 
           organizations={orgs} 
@@ -142,7 +180,10 @@ export default function TasksPage() {
             status: editingTask.status,
             priority: editingTask.priority,
             organizationId: editingTask.organizationId,
+            assignedTo: editingTask.assignedTo,
+            dueDate: editingTask.dueDate ? new Date(editingTask.dueDate) : undefined, 
           } : undefined}
+          selectedOrgId={selectedOrgId} 
           onSubmit={editingTask ? handleUpdateTask : handleCreateTask} 
         />
       </Modal>

@@ -22,7 +22,8 @@ export const createOrganization = api(
     return {
       organization: {
         id: org.id,
-        name: org.name
+        name: org.name,
+        createdAt: org.createdAt,
       }
     }
   }
@@ -34,7 +35,11 @@ export const getOrganizationById = api(
     const org = await OrganizationService.getById(params.id)
 
     return {
-      organization: { id: org.id, name: org.name }
+      organization: { 
+        id: org.id, 
+        name: org.name,
+        createdAt: org.createdAt,
+       }
     }
   }
 )
@@ -46,7 +51,11 @@ export const getMyOrganization = api(
     const org = await OrganizationService.getMyOrganization(userID)
 
     return {
-      organization: { id: org.id, name: org.name }
+      organization: { 
+        id: org.id, 
+        name: org.name,
+        createdAt: org.createdAt,
+       }
     }
   }
 )

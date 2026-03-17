@@ -10,12 +10,15 @@ export const UserRepo = {
      },
 
      // update user 
-      async update(userId: string, data: any) {
-               const [updated] = await db
-                 .update(users)
-                 .set(data)
-                 .where(eq(users.id, userId))
-                 .returning()
-               return updated
-          },    
+     async update(userId: string, data: any) {
+          const [updated] = await db
+            .update(users)
+            .set({
+              ...data,
+              updatedAt: new Date(), 
+            })
+            .where(eq(users.id, userId))
+            .returning()
+          return updated
+        },    
 }

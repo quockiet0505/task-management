@@ -5,7 +5,8 @@ export interface Task {
   status: "todo" | "in-progress" | "done"
   priority: "low" | "medium" | "high"
   organizationId: string
-  assignedBy: string
+  organizationName?: string
+  assignedBy: string | null
   assignedTo: string | null
   createdAt: Date
   dueDate: Date | null

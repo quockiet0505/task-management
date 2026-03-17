@@ -1,4 +1,4 @@
-export type Role = "admin" | "member"
+export type Role = "admin" | "member" | "owner"
 
 export interface Member {
   userId: string

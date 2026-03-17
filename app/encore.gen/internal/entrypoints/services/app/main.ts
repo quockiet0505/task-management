@@ -22,6 +22,7 @@ import { deleteTask as deleteTaskImpl15 } from "../../../../../api\\tasks\\task.
 import { getMe as getMeImpl16 } from "../../../../../api\\users\\user.api";
 import { updateMe as updateMeImpl17 } from "../../../../../api\\users\\user.api";
 import { adminUpdateUser as adminUpdateUserImpl18 } from "../../../../../api\\users\\user.api";
+import { changePassword as changePasswordImpl19 } from "../../../../../api\\users\\user.api";
 import * as app_service from "../../../../../encore.service";
 
 const handlers: Handler[] = [
@@ -246,6 +247,18 @@ const handlers: Handler[] = [
             service:           "app",
             name:              "adminUpdateUser",
             handler:           adminUpdateUserImpl18,
+            raw:               false,
+            streamingRequest:  false,
+            streamingResponse: false,
+        },
+        endpointOptions: {"expose":true,"auth":true,"isRaw":false,"isStream":false,"tags":[]},
+        middlewares: app_service.default.cfg.middlewares || [],
+    },
+    {
+        apiRoute: {
+            service:           "app",
+            name:              "changePassword",
+            handler:           changePasswordImpl19,
             raw:               false,
             streamingRequest:  false,
             streamingResponse: false,

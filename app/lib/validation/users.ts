@@ -10,6 +10,12 @@ export const UpdateMeSchema = z.object({
 
 })
 
+// change password
+export const ChangePasswordSchema = z.object({
+     currentPassword: z.string().min(6, "Password must be at least 6 characters"),
+     newPassword: z.string().min(6, "Password must be at least 6 characters"),
+   })
+
 // update user for admin
 export const AdminUpdateUserSchema = z.object({
      fullName: z.string().min(1, "Full name is required").optional(),

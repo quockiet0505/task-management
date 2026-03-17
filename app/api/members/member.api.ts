@@ -16,6 +16,8 @@ import type {
   DeleteMemberResponse,
 } from "./member.types"
 
+import { canUpdateMemberRole } from "../auth/authorization.service"
+
 // List members of organization
 export const listMembersFromOrg = api(
   { method: "POST", path: "/v1/organization/:organizationId/members", auth: true, expose: true },
@@ -30,6 +32,7 @@ export const listMembersFromOrg = api(
   }
 )
 
+
 // Update member role in organization
 export const updateMemberFromOrg = api(
   { method: "PUT", path: "/v1/organization/:organizationId/members/update", auth: true, expose: true },
@@ -41,7 +44,13 @@ export const updateMemberFromOrg = api(
       role: params.role
     })
 
-    await requireRole(auth.userID, params.organizationId, ["admin"])
+    // Check role permissions
+    await canUpdateMemberRole(
+      auth.userID,
+      validatedData.userId!,
+      params.organizationId,
+      validatedData.role!
+    )
 
     const member = await MemberService.updateMember({
       userId: validatedData.userId!,

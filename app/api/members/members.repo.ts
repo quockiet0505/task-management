@@ -4,7 +4,7 @@ import { organizationMembers } from "../../db/schema/organization_members"
 import { organizations } from "../../db/schema/organizations"
 import { eq, and } from "drizzle-orm"
 
-type Role = "admin" | "member"
+type Role = "admin" | "member" | "owner"
 
 export const MemberRepo = {
   // list members with user info

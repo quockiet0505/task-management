@@ -34,7 +34,7 @@ export const AuthRepo = {
   addMember(data: {
     userId: string
     organizationId: string
-    role: "admin" | "member"
+    role: "admin" | "member" | "owner"
   }) {
     return db.insert(organizationMembers).values(data)
   },

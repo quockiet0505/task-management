@@ -1,4 +1,4 @@
-// app/members/MembersContent.tsx
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client"
 
 import { Typography, message, Select, Tag } from "antd"
@@ -10,20 +10,24 @@ import MemberList from "@/components/members/MemberList"
 import MemberForm, { MemberFormValues } from "@/components/members/MemberForm"
 import CreateButton from "@/components/common/CreateButton"
 
-import { Member } from "@/types/member"
 import { Organization } from "@/types/org"
 import { listMembers, addMember, updateMemberRole, deleteMember } from "@/services/memberService"
 import { listOrganizations } from "@/services/orgService"
+
+import { Member, Role } from "@/types/member"
+import { useAuth } from "@/context/AuthContext" 
 
 const { Title } = Typography
 const { Option } = Select
 
 export default function MembersContent() {
+  const { user } = useAuth() 
   const [open, setOpen] = useState(false)
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [members, setMembers] = useState<Member[]>([])
   const [organizationId, setOrganizationId] = useState<string | null>(null)
   const [orgs, setOrgs] = useState<Organization[]>([])
+  const [currentUserRole, setCurrentUserRole] = useState<Role | null>(null)
 
   const searchParams = useSearchParams()
   const orgIdFromUrl = searchParams.get('orgId')
@@ -42,11 +46,20 @@ export default function MembersContent() {
     loadOrgs()
   }, [])
 
+  // Lấy role của user hiện tại
+  useEffect(() => {
+    if (user?.id && members.length > 0) {
+      const currentUserMember = members.find(m => m.userId === user.id)
+      if (currentUserMember) {
+        setCurrentUserRole(currentUserMember.role)
+      }
+    }
+  }, [members, user?.id])
+
   // Set organization từ URL hoặc mặc định
   useEffect(() => {
     if (orgs.length > 0) {
       if (orgIdFromUrl && orgs.find(org => org.id === orgIdFromUrl)) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setOrganizationId(orgIdFromUrl)
       } else {
         setOrganizationId(orgs[0].id)
@@ -152,23 +165,24 @@ export default function MembersContent() {
           setEditingMember(null)
         }}
         onSubmit={editingMember ? handleUpdateRole : handleAddMember}
+        //if initialValues editingMember, else undefined to reset form
         initialValues={editingMember ? {
           organizationId: editingMember.organizationId,
           userEmail: editingMember.email,
           role: editingMember.role
-        } : {
-          organizationId: organizationId || undefined
-        }}
+        } : undefined}
         organizations={orgs}
         title={editingMember ? "Edit Member Role" : "Add Member"}
         submitText={editingMember ? "Update Role" : "Add Member"}
+        currentUserRole={currentUserRole ?? undefined}
+        targetMember={editingMember ?? undefined}
       />
-
       <MemberList 
         members={members} 
         organizations={orgs}
         onDelete={handleDelete}
         onEdit={setEditingMember}
+        
       />
     </DashboardLayout>
   )

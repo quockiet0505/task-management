@@ -1,30 +1,40 @@
 "use client"
 
-import { Modal, Form, Input, Button } from "antd"
+import { Modal, Form, Input, Button, message } from "antd"
 import { UpdateMeRequest } from "@/types/user"
 import { updateMe } from "@/services/userService"
+import { useState } from "react"
 
 interface Props {
   open: boolean
   onClose: () => void
   initialValues?: UpdateMeRequest
-  onUpdated?: () => void
+  onSuccess?: () => void
 }
 
 export default function EditProfileDialog({
   open,
   onClose,
   initialValues,
-  onUpdated,
+  onSuccess,
 }: Props) {
   const [form] = Form.useForm<UpdateMeRequest>()
+  const [loading, setLoading] = useState(false)
 
   const handleFinish = async (values: UpdateMeRequest) => {
-    await updateMe(values)
-
-    form.resetFields()
-    onUpdated?.()
-    onClose()
+    try {
+      setLoading(true)
+      await updateMe(values)
+      form.resetFields()
+      onSuccess?.()
+      onClose()
+      message.success("Profile updated successfully")
+    } catch (error) {
+      console.error("Update failed:", error)
+      message.error("Failed to update profile")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -59,7 +69,7 @@ export default function EditProfileDialog({
           <Input placeholder="Enter your phone number" />
         </Form.Item>
 
-        <Button type="primary" htmlType="submit" block>
+        <Button type="primary" htmlType="submit" block loading={loading}>
           Update Profile
         </Button>
       </Form>

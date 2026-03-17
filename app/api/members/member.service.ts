@@ -84,4 +84,7 @@ export const MemberService = {
     await MemberRepo.deleteMember(data)
     return { success: true }
   },
+  
 }
+
+
