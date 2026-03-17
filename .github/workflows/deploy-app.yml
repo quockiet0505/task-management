@@ -175,8 +175,8 @@ jobs:
               sudo API_IMAGE=$API_IMAGE WEB_IMAGE=$WEB_IMAGE SECRET_NAME=$SECRET_NAME \
               docker stack deploy -c /tmp/docker-compose.app.yml task_stack --with-registry-auth
 
-              echo "Cleaning old docker images..."
-              sudo docker image prune -a -f --filter "until=24h" || true
+              echo 'Cleaning old docker images...'
+              sudo docker image prune -a -f || true
             "
 
 # HEALTHCHECK
