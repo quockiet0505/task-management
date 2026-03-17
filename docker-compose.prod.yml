@@ -13,18 +13,33 @@ services:
     secrets:
       - source: app_secret
         target: app_secret
+    
+    #  Timeout 3s, Node.js Healthcheck
+    healthcheck:
+      test: [
+        "CMD", 
+        "node", 
+        "-e", 
+        "const req=require('http').get('http://127.0.0.1:8080/health',res=>process.exit(res.statusCode===200?0:1));req.setTimeout(3000,()=>{req.destroy();process.exit(1);});req.on('error',()=>process.exit(1));"
+      ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
     deploy:
       replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      failure_action: rollback
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=app_network"
-
-        # API
         - "traefik.http.routers.app.rule=Host(`duongquockiet.id.vn`) && PathPrefix(`/v1/`)"
         - "traefik.http.routers.app.priority=100"
         - "traefik.http.services.app.loadbalancer.server.port=8080"
-
-        # Health check
         - "traefik.http.routers.app-health.rule=Path(`/health`)"
         - "traefik.http.routers.app-health.priority=200"
         - "traefik.http.routers.app-health.service=app"
@@ -33,8 +48,27 @@ services:
     image: ${WEB_IMAGE}
     networks:
       - app_network
+    
+    #  Node.js Healthcheck
+    healthcheck:
+      test: [
+        "CMD", 
+        "node", 
+        "-e", 
+        "const req=require('http').get('http://127.0.0.1:3000/',res=>process.exit(res.statusCode===200?0:1));req.setTimeout(3000,()=>{req.destroy();process.exit(1);});req.on('error',()=>process.exit(1));"
+      ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
     deploy:
-      replicas: 1
+      replicas: 2 
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      failure_action: rollback
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=app_network"
