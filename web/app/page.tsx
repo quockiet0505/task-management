@@ -68,7 +68,7 @@ export default function HomePage() {
           }}
         >
           {status === 'checking' && (
-            <Space direction="vertical" style={{ width: '100%', justifyContent: 'center' }}>
+            <Space orientation="vertical" style={{ width: '100%', justifyContent: 'center' }}>
               <Spin size="large" />
               <Text>Checking backend connection...</Text>
             </Space>
@@ -85,7 +85,7 @@ export default function HomePage() {
           )}
 
           {status === 'error' && (
-            <Space direction="vertical" style={{ width: '100%', justifyContent: 'center' }}>
+            <Space orientation="vertical" style={{ width: '100%', justifyContent: 'center' }}>
               <CloseCircleOutlined style={{ color: '#ff4d4f', fontSize: 40 }} />
               <Title level={4} style={{ color: '#ff4d4f', margin: 0 }}>
                 Connection Failed

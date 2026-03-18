@@ -121,7 +121,7 @@ export default function MemberForm({
         form.resetFields()
         onClose()
       }}
-      destroyOnClose
+      destroyOnHidden
     >
       <Spin spinning={loading}>
         <Form form={form} layout="vertical" onFinish={onSubmit}>
